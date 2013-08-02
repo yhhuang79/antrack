@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:antrack="http://schemas.android.com/apk/res-auto" >
+
+    <item
+        android:id="@+id/action_share"
+        android:icon="@drawable/actionbar_addfriend"
+        android:title="share long title"
+        android:titleCondensed="share"
+        antrack:showAsAction="always">
+    </item>
+    <item
+        android:id="@+id/action_stop"
+        android:icon="@drawable/ic_launcher"
+        antrack:showAsAction="always"
+        android:title="stop long title"
+        android:titleCondensed="stop">
+    </item>
+
+</menu>
