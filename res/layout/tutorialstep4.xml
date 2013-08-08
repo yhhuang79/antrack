@@ -6,7 +6,7 @@
     <TextView 
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="INTRO"
+        android:text="STEP 4"
         android:textSize="36sp"
         android:layout_centerInParent="true"/>
 
