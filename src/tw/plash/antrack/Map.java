@@ -3,9 +3,11 @@ package tw.plash.antrack;
 import java.util.ArrayDeque;
 import java.util.Collection;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -32,8 +34,10 @@ import com.google.android.gms.maps.model.Marker;
 
 public class Map extends FragmentActivity {
 	
-	private Context mContext;
+//	private Context mContext;
 	private GoogleMap gmap;
+
+	private boolean isSharing;
 	
 	private Messenger messengerToService = null;
 	private boolean mIsBound;
@@ -103,71 +107,123 @@ public class Map extends FragmentActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		mContext = this;
+//		mContext = this;
 		
 		setContentView(R.layout.map);
 		
-		final SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mContext);
+		final SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(Map.this);
 		
-		if(!pref.getBoolean("shareintentsent", false)){
-			final Intent sendIntent = getIntent().getExtras().getParcelable("sendintent");
-			
-			new AsyncTask<Void, Void, Void>(){
-				
-				private ProgressDialog diag;
-				
-				@Override
-				protected void onPreExecute() {
-					diag = new ProgressDialog(mContext);
-					diag.setMessage("preparing your invitation message");
-					diag.setIndeterminate(true);
-					diag.setCancelable(false);
-					diag.show();
-				};
-				
-				@Override
-				protected Void doInBackground(Void... params) {
-					try {
-						Thread.sleep(5000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					return null;
-				}
-				
-				@Override
-				protected void onPostExecute(Void result) {
-					super.onPostExecute(result);
-					diag.dismiss();
-					diag = null;
-					startActivity(sendIntent);
-					pref.edit().putBoolean("shareintentsent", true).commit();
-				}
-			}.execute();
-		}
+//		if(!pref.getBoolean("shareintentsent", false)){
+//			final Intent sendIntent = getIntent().getExtras().getParcelable("sendintent");
+//			
+//			new AsyncTask<Void, Void, Void>(){
+//				
+//				private ProgressDialog diag;
+//				
+//				@Override
+//				protected void onPreExecute() {
+//					diag = new ProgressDialog(mContext);
+//					diag.setMessage("preparing your invitation message");
+//					diag.setIndeterminate(true);
+//					diag.setCancelable(false);
+//					diag.show();
+//				};
+//				
+//				@Override
+//				protected Void doInBackground(Void... params) {
+//					try {
+//						Thread.sleep(5000);
+//					} catch (InterruptedException e) {
+//						e.printStackTrace();
+//					}
+//					return null;
+//				}
+//				
+//				@Override
+//				protected void onPostExecute(Void result) {
+//					super.onPostExecute(result);
+//					diag.dismiss();
+//					diag = null;
+//					startActivity(sendIntent);
+//					pref.edit().putBoolean("shareintentsent", true).commit();
+//				}
+//			}.execute();
+//		}
 		
 		isMapAvailable();
 		
-		Button stop = (Button) findViewById(R.id.stop);
-		stop.setOnClickListener(new View.OnClickListener() {
+//		isSharing = pref.getBoolean("issharing", false);
+		
+		Button controlButton = (Button) findViewById(R.id.controlbutton);
+		if(Locator.isSharingLocation()){
+			controlButton.setText("STOP sharing my location");
+		} else{
+			controlButton.setText("START sharing my location");
+		}
+		
+		controlButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Button btn = (Button) v;
-				if (btn.getText().toString().contains("stop")) {
-					Toast.makeText(Map.this, "stoppp", Toast.LENGTH_SHORT).show();
-					btn.setText("start\nover");
-					//send a stopping notification to server
-					//request a trajectory summary from service, then stop it
-					sendMessageToService();
-					//service should stop itself after replying the trajectory summary
+				final Button btn = (Button) v;
+				if (btn.getText().toString().contains("STOP")) {
+					new AlertDialog.Builder(Map.this)	
+					.setMessage("are you sure you want to stop sharing?")
+					.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							Toast.makeText(Map.this, "sharing is STOPPED", Toast.LENGTH_SHORT).show();
+							btn.setText("START sharing my location");
+							//send a stopping notification to server
+							//request a trajectory summary from service, then stop it
+//							sendMessageToService();
+							//service should stop itself after replying the trajectory summary
+						}
+					})
+					.setNegativeButton("no", new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							Toast.makeText(Map.this, "sharing CONTINUES", Toast.LENGTH_SHORT).show();
+						}
+					})
+					.show();
+					
 				} else {
-					Toast.makeText(Map.this, "back to init", Toast.LENGTH_SHORT).show();
-					startActivity(new Intent(Map.this, MainPage.class));
-					finish();
+					
+					new AsyncTask<Void, Void, Void>(){
+						
+						private ProgressDialog diag;
+						
+						@Override
+						protected void onPreExecute() {
+							diag = new ProgressDialog(Map.this);
+							diag.setMessage("Contacting AnTrack location\nsharing service...");
+							diag.setIndeterminate(true);
+							diag.setCancelable(false);
+							diag.show();
+						};
+						
+						@Override
+						protected Void doInBackground(Void... params) {
+							
+							if(Utility.isInternetAvailable(Map.this)){
+								//we have internet, now do the "initialize" connection
+								
+							} else{
+								//no internet, prompt user to check internet service and try again later
+								
+							}
+							
+							return null;
+						}
+						
+						@Override
+						protected void onPostExecute(Void result) {
+							
+						};
+					}.execute();
 				}
 			}
 		});
-		stop.setVisibility(View.VISIBLE);
 	}
 	
 	private void isMapAvailable() {
@@ -211,7 +267,7 @@ public class Map extends FragmentActivity {
 		// If the service is running when the activity starts, we want to
 		// automatically bind to it.
 		if (!Locator.isRunning()) {
-			startService(new Intent(mContext, Locator.class));
+			startService(new Intent(Map.this, Locator.class));
 		}
 		doBindService();
 	}
@@ -223,7 +279,7 @@ public class Map extends FragmentActivity {
 	}
 	
 	void doBindService() {
-		bindService(new Intent(this, Locator.class), mConnection, Context.BIND_AUTO_CREATE);
+		bindService(new Intent(Map.this, Locator.class), mConnection, Context.BIND_AUTO_CREATE);
 		mIsBound = true;
 	}
 	

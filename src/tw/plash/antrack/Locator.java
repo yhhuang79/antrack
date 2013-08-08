@@ -22,6 +22,7 @@ public class Locator extends Service implements LocationListener,
 		GooglePlayServicesClient.OnConnectionFailedListener {
 	
 	private static boolean serviceIsRunning = false;
+	private static boolean serviceIsSharingLocation = false;
 	
 	static final int MSG_REGISTER_CLIENT = 0;
 	static final int MSG_UNREGISTER_CLIENT = 1;
@@ -111,6 +112,10 @@ public class Locator extends Service implements LocationListener,
 	
 	public static boolean isRunning() {
 		return serviceIsRunning;
+	}
+	
+	public static boolean isSharingLocation(){
+		return serviceIsSharingLocation;
 	}
 	
 	@Override
