@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -19,25 +18,25 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
-import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.Marker;
 
 public class Map extends FragmentActivity {
 	
-//	private Context mContext;
 	private GoogleMap gmap;
+	private Button controlButton;
 
-	private boolean isSharing;
+	private OnLocationChangedListener onLocationChangedListener;
 	
 	private Messenger messengerToService = null;
 	private boolean mIsBound;
@@ -62,7 +61,6 @@ public class Map extends FragmentActivity {
 				if(onLocationChangedListener != null){
 					onLocationChangedListener.onLocationChanged(location);
 				}
-				
 				break;
 			default:
 				super.handleMessage(msg);
@@ -107,183 +105,160 @@ public class Map extends FragmentActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-//		mContext = this;
-		
 		setContentView(R.layout.map);
 		
-		final SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(Map.this);
+		setupMapIfNotAvailable();
 		
-//		if(!pref.getBoolean("shareintentsent", false)){
-//			final Intent sendIntent = getIntent().getExtras().getParcelable("sendintent");
-//			
-//			new AsyncTask<Void, Void, Void>(){
-//				
-//				private ProgressDialog diag;
-//				
-//				@Override
-//				protected void onPreExecute() {
-//					diag = new ProgressDialog(mContext);
-//					diag.setMessage("preparing your invitation message");
-//					diag.setIndeterminate(true);
-//					diag.setCancelable(false);
-//					diag.show();
-//				};
-//				
-//				@Override
-//				protected Void doInBackground(Void... params) {
-//					try {
-//						Thread.sleep(5000);
-//					} catch (InterruptedException e) {
-//						e.printStackTrace();
-//					}
-//					return null;
-//				}
-//				
-//				@Override
-//				protected void onPostExecute(Void result) {
-//					super.onPostExecute(result);
-//					diag.dismiss();
-//					diag = null;
-//					startActivity(sendIntent);
-//					pref.edit().putBoolean("shareintentsent", true).commit();
-//				}
-//			}.execute();
-//		}
-		
-		isMapAvailable();
-		
-//		isSharing = pref.getBoolean("issharing", false);
-		
-		Button controlButton = (Button) findViewById(R.id.controlbutton);
-		if(Locator.isSharingLocation()){
-			controlButton.setText("STOP sharing my location");
-		} else{
-			controlButton.setText("START sharing my location");
-		}
-		
-		controlButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				final Button btn = (Button) v;
-				if (btn.getText().toString().contains("STOP")) {
-					new AlertDialog.Builder(Map.this)	
-					.setMessage("are you sure you want to stop sharing?")
-					.setPositiveButton("yes", new DialogInterface.OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							Toast.makeText(Map.this, "sharing is STOPPED", Toast.LENGTH_SHORT).show();
-							btn.setText("START sharing my location");
-							//send a stopping notification to server
-							//request a trajectory summary from service, then stop it
-//							sendMessageToService();
-							//service should stop itself after replying the trajectory summary
-						}
-					})
-					.setNegativeButton("no", new DialogInterface.OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							Toast.makeText(Map.this, "sharing CONTINUES", Toast.LENGTH_SHORT).show();
-						}
-					})
-					.show();
-					
-				} else {
-					
-					new AsyncTask<Void, Void, Void>(){
-						
-						private ProgressDialog diag;
-						
-						@Override
-						protected void onPreExecute() {
-							diag = new ProgressDialog(Map.this);
-							diag.setMessage("Contacting AnTrack location\nsharing service...");
-							diag.setIndeterminate(true);
-							diag.setCancelable(false);
-							diag.show();
-						};
-						
-						@Override
-						protected Void doInBackground(Void... params) {
-							
-							if(Utility.isInternetAvailable(Map.this)){
-								//we have internet, now do the "initialize" connection
-								
-							} else{
-								//no internet, prompt user to check internet service and try again later
-								
-							}
-							
-							return null;
-						}
-						
-						@Override
-						protected void onPostExecute(Void result) {
-							
-						};
-					}.execute();
-				}
-			}
-		});
+		setupControlButton();
 	}
 	
-	private void isMapAvailable() {
+	private void setupMapIfNotAvailable() {
 		if (gmap == null) {
 			gmap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
-			if (gmap != null) {
-				setUpMap();
-			}
+			setUpMap();
 		}
 	}
 	
-	private OnLocationChangedListener onLocationChangedListener;
-	
 	private void setUpMap() {
-		
 		gmap.setLocationSource(new LocationSource() {
-			
 			@Override
 			public void activate(OnLocationChangedListener listener) {
 				onLocationChangedListener = listener;
 			}
-			
 			@Override
 			public void deactivate() {
 				onLocationChangedListener = null;
 			}
 		});
-		
 		gmap.setMyLocationEnabled(true);
 		gmap.getUiSettings().setAllGesturesEnabled(true);
 		gmap.getUiSettings().setCompassEnabled(true);
 	}
 	
+	private void setupControlButton(){
+		controlButton = (Button) findViewById(R.id.controlbutton);
+		if(Locator.isSharingLocation()){
+			controlButton.setText("STOP sharing my location");
+		} else{
+			controlButton.setText("START sharing my location");
+		}
+		controlButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (shouldStopSharing()) {
+					setupConfirmStopDialog();
+				} else {
+					setupStartSharingConnection();
+				}
+			}
+		});
+	}
+	
+	private boolean shouldStopSharing(){
+		if(controlButton.getText().toString().contains("STOP")){
+			return true;
+		} else{
+			return false;
+		}
+	}
+	
+	private void setupConfirmStopDialog(){
+		new AlertDialog.Builder(Map.this)	
+		.setMessage("are you sure you want to stop sharing?")
+		.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				Toast.makeText(Map.this, "sharing is STOPPED", Toast.LENGTH_SHORT).show();
+				controlButton.setText("START sharing my location");
+				//send a stopping notification to server
+				//request a trajectory summary from service, then stop it
+//				sendMessageToService();
+				//service should stop itself after replying the trajectory summary
+			}
+		})
+		.setNegativeButton("no", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				Toast.makeText(Map.this, "sharing CONTINUES", Toast.LENGTH_SHORT).show();
+			}
+		})
+		.show();
+	}
+	
+	private void setupStartSharingConnection(){
+		new AsyncTask<Void, Void, Integer>(){
+			
+			private final int NO_INTERNET_ERROR = 1;
+			private final int CONNECTION_ERROR = 2;
+			private final int ALL_GOOD = 3;
+			
+			private ProgressDialog diag;
+			
+			@Override
+			protected void onPreExecute() {
+				diag = new ProgressDialog(Map.this);
+				diag.setMessage("Contacting AnTrack location\nsharing service...");
+				diag.setIndeterminate(true);
+				diag.setCancelable(false);
+				diag.show();
+			};
+			
+			@Override
+			protected Integer doInBackground(Void... params) {
+				if(!Utility.isInternetAvailable(Map.this)){
+					//no internet, prompt user to check internet service and try again later
+					return NO_INTERNET_ERROR;
+				} else{
+					
+					//we have internet, now do the "initialize" connection
+				}
+				
+				return null;
+			}
+			
+			@Override
+			protected void onPostExecute(Integer result) {
+				diag.dismiss();
+				switch(result){
+				case NO_INTERNET_ERROR:
+					
+					break;
+				case ALL_GOOD:
+					controlButton.setText("");
+					break;
+				case CONNECTION_ERROR:
+				default:
+					break;
+				}
+			};
+		}.execute();
+	}
+	
 	@Override
 	protected void onResume() {
 		super.onResume();
-		CheckIfServiceIsRunning();
+		startServiceIfNotAlreadyRunning();
+		bindToService();
 	}
 	
-	private void CheckIfServiceIsRunning() {
-		// If the service is running when the activity starts, we want to
-		// automatically bind to it.
+	private void startServiceIfNotAlreadyRunning() {
 		if (!Locator.isRunning()) {
 			startService(new Intent(Map.this, Locator.class));
 		}
-		doBindService();
+	}
+	
+	void bindToService() {
+		bindService(new Intent(Map.this, Locator.class), mConnection, Context.BIND_AUTO_CREATE);
+		mIsBound = true;
 	}
 	
 	@Override
 	protected void onPause() {
 		super.onPause();
-		doUnbindService();
+		unbindFromService();
 	}
 	
-	void doBindService() {
-		bindService(new Intent(Map.this, Locator.class), mConnection, Context.BIND_AUTO_CREATE);
-		mIsBound = true;
-	}
-	
-	void doUnbindService() {
+	void unbindFromService() {
 		if (mIsBound) {
 			// If we have received the service, and hence registered with it,
 			// then now is the time to unregister.
@@ -300,6 +275,21 @@ public class Map extends FragmentActivity {
 			// Detach our existing connection.
 			unbindService(mConnection);
 			mIsBound = false;
+		}
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+//		inflater.inflate(R.menu.activity_menu, menu);
+		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch(item.getItemId()){
+		default:
+			return super.onOptionsItemSelected(item);
 		}
 	}
 }
