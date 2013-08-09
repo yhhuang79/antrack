@@ -36,19 +36,18 @@
         <uses-library android:name="com.google.android.maps" />
 
         <activity
-            android:name="MainPage"
-            android:configChanges="orientation|screenLayout" >
-            
-        </activity>
-        <activity
-            android:theme="@style/Theme.AppCompat.Light"
-            android:name="Map2"
+            android:name="Tutorial"
             android:configChanges="orientation|screenLayout" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name="Map"
+            android:configChanges="orientation|screenLayout" >
+            
         </activity>
 
         <meta-data
