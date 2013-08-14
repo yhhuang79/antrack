@@ -13,6 +13,7 @@
         android:orientation="vertical" >
 
         <TextView
+            android:id="@+id/latitude_field"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="10dip"
@@ -20,6 +21,7 @@
             android:textSize="18sp" />
 
         <TextView
+            android:id="@+id/longitude_field"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="10dip"
@@ -27,6 +29,7 @@
             android:textSize="18sp" />
 
         <TextView
+            android:id="@+id/duration_field"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="10dip"
@@ -34,6 +37,7 @@
             android:textSize="18sp" />
 
         <TextView
+            android:id="@+id/distance_field"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="10dip"
@@ -44,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="10dip"
-            android:text="something else to show"
+            android:text="Fifth TextView"
             android:textSize="18sp" />
     </LinearLayout>
 
