@@ -4,14 +4,16 @@
     android:layout_height="match_parent" >
 
     <include
-        android:layout_above="@+id/controlbutton"
-        layout="@layout/dashboard" />
+        android:layout_toLeftOf="@+id/controlbutton"
+        layout="@layout/dashboard"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"/>
 
     <Button
         android:id="@+id/controlbutton"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_centerHorizontal="true"
         android:textSize="18sp" />
 
     <fragment
@@ -20,7 +22,7 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/controlbutton"
+        android:layout_toRightOf="@+id/controlbutton"
         map:cameraTargetLat="23.795398"
         map:cameraTargetLng="121.012756"
         map:cameraZoom="6"
