@@ -2,7 +2,6 @@ package tw.plash.antrack;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
@@ -23,6 +22,7 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 
 import android.content.Context;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
@@ -32,6 +32,7 @@ import android.net.NetworkInfo;
  * @author Joao Bispo
  */
 public class Utility {
+	
 	private static final long MASK_16_BITS = 0xFFFFL;
 	private static final int MASK_BIT_1 = 0x1;
 	
@@ -176,4 +177,6 @@ public class Utility {
 			return new DefaultHttpClient();
 		}
 	}
+	
+	
 }

@@ -64,27 +64,6 @@ public class Tutorial extends Activity {
 				setScreenContent(R.layout.tutorialstep1);
 			}
 		});
-		
-		final TextView tv = (TextView) findViewById(R.id.yo);
-		tv.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				String text = tv.getText().toString();
-				if(text.contains("INTRO")){
-					ServerConnectionTest.initialize(Tutorial.this);
-					tv.setText("init...");
-				} else if(text.contains("init")){
-					ServerConnectionTest.upload(Tutorial.this);
-					tv.setText("upload...");
-				} else if(text.contains("upload...")){
-					ServerConnectionTest.stop(Tutorial.this);
-					tv.setText("stop...");
-				} else if(text.contains("stop...")){
-					ServerConnectionTest.upload(Tutorial.this);
-					tv.setText("sneaky upload...");
-				}
-			}
-		});
 	}
 	
 	private void setTutorialStep1PageContent() {

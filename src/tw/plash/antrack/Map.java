@@ -37,6 +37,7 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -62,6 +63,9 @@ public class Map extends FragmentActivity {
 	private TextView longitudeField;
 	private TextView durationField;
 	private TextView distanceField;
+	private TextView accuracyField;
+	private TextView speedField;
+	private TextView numberOfWatcherField;
 	
 	private OnLocationChangedListener onLocationChangedListener;
 	
@@ -74,6 +78,9 @@ public class Map extends FragmentActivity {
 	class IncomingHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {
+			Bundle bundle = msg.getData();
+			Location location = bundle.getParcelable("location");
+			TripStatictics stats = (TripStatictics) bundle.getSerializable("stats");
 			switch (msg.what) {
 			case Locator.SYNC_CURRENT_TRAJECTORY:
 				//will be called right after binding with service
@@ -86,17 +93,25 @@ public class Map extends FragmentActivity {
 				break;
 			case Locator.NEW_LOCATION_UPDATE:
 				
-				Location location = (Location) msg.obj;
 				onLocationChangedListener.onLocationChanged(location);
 				
-				latitudeField.setText("latitude: " + location.getLatitude());
-				longitudeField.setText("longitude: " + location.getLongitude());
-				durationField.setText("timestamp: " + location.getTime());
-				distanceField.setText("accuracy: " + location.getAccuracy());
+				latitudeField.setText(String.format("%9.5f", location.getLatitude()));
+				longitudeField.setText(String.format("%9.5f", location.getLongitude()));
+				if(stats != null){
+					durationField.setText(stats.getDuration());
+					distanceField.setText(stats.getDistance());
+					numberOfWatcherField.setText(stats.getNumberOfWatcher());
+				}
+				accuracyField.setText(String.format("%.1f", location.getAccuracy()));
+				speedField.setText(String.format("%.2f", location.getSpeed()));
 				
 				break;
 			case Locator.STOP_SHARING_AND_SEND_SUMMARY:
-				
+				durationField.setText(stats.getDuration());
+				distanceField.setText(stats.getDistance());
+				accuracyField.setText(stats.getAverageAccuracy() + " (avg.)");
+				speedField.setText(stats.getAverageSpeed() + " (avg.)");
+				numberOfWatcherField.setText(stats.getNumberOfWatcher());
 				break;
 			default:
 				super.handleMessage(msg);
@@ -178,9 +193,9 @@ public class Map extends FragmentActivity {
 	private void setupControlButton(){
 		controlButton = (Button) findViewById(R.id.controlbutton);
 		if(Locator.isSharingLocation()){
-			controlButton.setText("STOP sharing my location");
+			controlButton.setText(R.string.control_button_stop);
 		} else{
-			controlButton.setText("START sharing my location");
+			controlButton.setText(R.string.control_button_start);
 		}
 		controlButton.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -209,7 +224,7 @@ public class Map extends FragmentActivity {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				Toast.makeText(Map.this, "sharing is STOPPED", Toast.LENGTH_SHORT).show();
-				controlButton.setText("START sharing my location");
+				controlButton.setText(R.string.control_button_start);
 				
 				sendMessageToService(Locator.STOP_SHARING_AND_SEND_SUMMARY);
 				
@@ -279,7 +294,7 @@ public class Map extends FragmentActivity {
 								}
 							}
 						}
-						return null;
+						return ConnectionResult.CONNECTION_ERROR;
 					}
 					
 					@Override
@@ -291,7 +306,6 @@ public class Map extends FragmentActivity {
 							break;
 						case ALL_GOOD:
 							Toast.makeText(Map.this, "ALL GOOD", Toast.LENGTH_LONG).show();
-							controlButton.setText("START sharing my location");
 							break;
 						case PARAMETER_ERROR:
 							Toast.makeText(Map.this, "INVALID USERID", Toast.LENGTH_LONG).show();
@@ -304,6 +318,21 @@ public class Map extends FragmentActivity {
 					};
 				}.execute();
 				
+				LayoutInflater li = getLayoutInflater();
+				
+				new AlertDialog.Builder(Map.this)
+					.setCancelable(true)
+					.setTitle("Sharing Summary")
+					.setView(li.inflate(R.layout.sharingsummary, null))
+					.setNeutralButton("Close", new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							dialog.dismiss();
+						}
+					})
+					.show();
+				
+				li = null;
 			}
 		})
 		.setNegativeButton("no", new DialogInterface.OnClickListener() {
@@ -313,32 +342,6 @@ public class Map extends FragmentActivity {
 			}
 		})
 		.show();
-	}
-	
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-		Log.e("Map.onActivityResult", "request code: " + requestCode);
-		Log.e("Map.onActivityResult", "result code: " + resultCode);
-		if(requestCode == 12345){
-			switch(resultCode){
-			case RESULT_CANCELED:
-				Toast.makeText(Map.this, "sharing canceled!", Toast.LENGTH_SHORT).show();
-				sendMessageToService(Locator.STOP_SHARING_AND_SEND_SUMMARY);
-				controlButton.setText("START sharing my location");
-				Log.e("Map.onActivityResult", "RESULT_CANCELED");
-				break;
-			case RESULT_FIRST_USER:
-				Log.e("Map.onActivityResult", "RESULT_FIRST_USER");
-				break;
-			case RESULT_OK:
-				Log.e("Map.onActivityResult", "RESULT_OK");
-				break;
-			default:
-				Log.e("Map.onActivityResult", "default");
-				break;
-			}
-		}
 	}
 	
 	private void setupStartSharingConnection(){
@@ -412,7 +415,7 @@ public class Map extends FragmentActivity {
 						}
 					}
 				}
-				return null;
+				return ConnectionResult.CONNECTION_ERROR;
 			}
 			
 			@Override
@@ -424,7 +427,7 @@ public class Map extends FragmentActivity {
 					break;
 				case ALL_GOOD:
 					Toast.makeText(Map.this, "ALL GOOD", Toast.LENGTH_LONG).show();
-					controlButton.setText("STOP sharing my location");
+					controlButton.setText(R.string.control_button_stop);
 					//should notify service to show notification and keep running...
 					sendMessageToService(Locator.START_SHARING);
 					
@@ -433,7 +436,7 @@ public class Map extends FragmentActivity {
 					sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
 					sendIntent.putExtra(Intent.EXTRA_TEXT, "Click on the link to follow my lead..." + preference.getString("url", ""));
 					sendIntent.setType("text/plain");
-					startActivityForResult(Intent.createChooser(sendIntent, "Share via..."), 12345);
+					startActivity(Intent.createChooser(sendIntent, "Share via..."));
 					
 					break;
 				case PARAMETER_ERROR:
@@ -453,6 +456,9 @@ public class Map extends FragmentActivity {
 		longitudeField = (TextView) findViewById(R.id.longitude_field);
 		durationField = (TextView) findViewById(R.id.duration_field);
 		distanceField = (TextView) findViewById(R.id.distance_field);
+		accuracyField = (TextView) findViewById(R.id.accuracy_field);
+		speedField = (TextView) findViewById(R.id.speed_field);
+		numberOfWatcherField = (TextView) findViewById(R.id.number_of_watchers);
 	}
 	
 	@Override
