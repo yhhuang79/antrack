@@ -1,6 +1,8 @@
 package tw.plash.antrack;
 
 import java.io.Serializable;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.location.Location;
 
@@ -14,18 +16,18 @@ public class TripStatictics implements Serializable{
 	private final double radius = 6371008.7714;
 	
 	private double totalDistance;
-	private long totalDuration;
 	private double averageAccuracy;
 	private double averageSpeed;
 	private int pointCounter;
 	
+	private long calculatedDurationInMilliseconds;
 	private int numberOfWatcher;
 	
 	private Location previousLocation;
 	
 	public TripStatictics() {
 		totalDistance = 0;
-		totalDuration = 0;
+		calculatedDurationInMilliseconds = 0;
 		averageAccuracy = 0;
 		averageSpeed = 0;
 		pointCounter = 0;
@@ -36,7 +38,7 @@ public class TripStatictics implements Serializable{
 	
 	public void resetStats(){
 		totalDistance = 0;
-		totalDuration = 0;
+		calculatedDurationInMilliseconds = 0;
 		averageAccuracy = 0;
 		averageSpeed = 0;
 		pointCounter = 0;
@@ -49,7 +51,7 @@ public class TripStatictics implements Serializable{
 		pointCounter += 1;
 		if(previousLocation != null){
 			totalDistance += getGreatCircleDistance(location);
-			totalDuration += (location.getTime() - previousLocation.getTime());
+			calculatedDurationInMilliseconds += (location.getTime() - previousLocation.getTime());
 			
 			double accuracySum = averageAccuracy * (pointCounter - 1);
 			averageAccuracy = (accuracySum + location.getAccuracy()) / pointCounter;
@@ -74,12 +76,8 @@ public class TripStatictics implements Serializable{
 		return degree/180*Math.PI;
 	}
 	
-	public String getDuration(){
-		//milliseconds -> seconds -> minutes -> hours
-		Double hours = ((double) totalDuration) / 1000 / 60 / 60;
-		Double minutes = (hours - hours.intValue()) * 60;
-		Double seconds = (minutes - minutes.intValue()) * 60;
-		return String.format("%d:%02d:%04.1f", hours.intValue(), minutes.intValue(), seconds);
+	public String getCalculatedDurationAsFormattedString(){
+		return Utility.getDurationInSecondsAsFormattedString((calculatedDurationInMilliseconds / 1000));
 	}
 	
 	public String getDistance(){

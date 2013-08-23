@@ -1,33 +1,18 @@
 package tw.plash.antrack;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayDeque;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
-
+import tw.plash.antrack.connection.InitializeConnection;
+import tw.plash.antrack.connection.StopConnection;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.location.Location;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -46,14 +31,18 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
-public class Map extends FragmentActivity {
-	
-	private enum ConnectionResult {NO_INTERNET, PARAMETER_ERROR, CONNECTION_ERROR, ALL_GOOD};
+public class Map extends FragmentActivity implements ConnectionResultCallback{
 	
 	private SharedPreferences preference;
 	
@@ -67,56 +56,133 @@ public class Map extends FragmentActivity {
 	private TextView speedField;
 	private TextView numberOfWatcherField;
 	
+	private MarkerOptions startingPoint;
+	private Polyline trajectory;
+	
 	private OnLocationChangedListener onLocationChangedListener;
 	
 	private Messenger messengerToService = null;
 	private boolean mIsBound;
 	private final Messenger messengerFromService = new Messenger(new IncomingHandler());
 	
-	private final ArrayDeque<Location> locations = new ArrayDeque<Location>();
-	
 	class IncomingHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {
 			Bundle bundle = msg.getData();
 			Location location = bundle.getParcelable("location");
+			String durationAsFormattedString = bundle.getString("durationInSeconds");
 			TripStatictics stats = (TripStatictics) bundle.getSerializable("stats");
+			ArrayList<Location> locations = (ArrayList<Location>) msg.getData().getSerializable("trajectory");
 			switch (msg.what) {
 			case Locator.SYNC_CURRENT_TRAJECTORY:
-				//will be called right after binding with service
-//				Object obj = msg.getData().getParcelable("locations");
-//				if(obj instanceof Collection<?>){
-//					locations.clear();
-//					locations.addAll((Collection<? extends Location>) obj);
-//				}
-				
+				Log.w("map.incominghandler", "SYNC_CURRENT_TRAJECTORY");
+				if(!locations.isEmpty()){
+					clearMapAndDrawSyncedTrajectory(locations);
+				}
 				break;
 			case Locator.NEW_LOCATION_UPDATE:
-				
+				Log.w("map.incominghandler", "NEW_LOCATION_UPDATE");
 				onLocationChangedListener.onLocationChanged(location);
-				
-				latitudeField.setText(String.format("%9.5f", location.getLatitude()));
-				longitudeField.setText(String.format("%9.5f", location.getLongitude()));
-				if(stats != null){
-					durationField.setText(stats.getDuration());
-					distanceField.setText(stats.getDistance());
-					numberOfWatcherField.setText(stats.getNumberOfWatcher());
+				updateDashboard(location, stats);
+				if(Locator.isSharingLocation()){
+					updateCurrentTrajectory(location);
 				}
-				accuracyField.setText(String.format("%.1f", location.getAccuracy()));
-				speedField.setText(String.format("%.2f", location.getSpeed()));
-				
 				break;
-			case Locator.STOP_SHARING_AND_SEND_SUMMARY:
-				durationField.setText(stats.getDuration());
-				distanceField.setText(stats.getDistance());
-				accuracyField.setText(stats.getAverageAccuracy() + " (avg.)");
-				speedField.setText(stats.getAverageSpeed() + " (avg.)");
-				numberOfWatcherField.setText(stats.getNumberOfWatcher());
+			case Locator.SHARING_SUMMARY_REPLY:
+				Log.w("map.incominghandler", "SHARING_SUMMARY_REPLY");
+				setupSharingSummaryDialog(stats);
+				break;
+			case Locator.SHARING_DURATION_UPDATE:
+				updateDurationInDashboard(durationAsFormattedString);
 				break;
 			default:
 				super.handleMessage(msg);
 			}
 		}
+	}
+	
+	private void clearMapAndDrawSyncedTrajectory(List<Location> locations){
+		clearMapAndTrajectory();
+		LatLngBounds.Builder boundBuilder = new LatLngBounds.Builder();
+		PolylineOptions polyline = new PolylineOptions();
+		for(Location location : locations){
+			LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+			if(startingPoint == null){
+				startingPoint = new MarkerOptions().position(latlng).title("Start");
+			}
+			polyline.add(latlng);
+			boundBuilder.include(latlng);
+		}
+		trajectory = gmap.addPolyline(polyline);
+		gmap.addMarker(startingPoint);
+		//zoom out to show entire trajectory
+		gmap.animateCamera(CameraUpdateFactory.newLatLngBounds(boundBuilder.build(), 5));
+	}
+	
+	private void updateDashboard(Location location, TripStatictics stats){
+		latitudeField.setText(String.format("%9.5f", location.getLatitude()));
+		longitudeField.setText(String.format("%9.5f", location.getLongitude()));
+		if(stats != null){
+			distanceField.setText(stats.getDistance());
+			numberOfWatcherField.setText(stats.getNumberOfWatcher());
+		}
+		accuracyField.setText(String.format("%.1f", location.getAccuracy()));
+		speedField.setText(String.format("%.2f", location.getSpeed()));
+	}
+	
+	private void updateCurrentTrajectory(Location location){
+		LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+		if(startingPoint == null){
+			startingPoint = new MarkerOptions().position(latlng).title("Start");
+			gmap.addMarker(startingPoint);
+		}
+		if(trajectory == null){
+			trajectory = gmap.addPolyline(new PolylineOptions().add(latlng));
+		} else{
+			updateTrajectoryPointList(latlng);
+		}
+	}
+	
+	private void updateTrajectoryPointList(LatLng latlng){
+		List<LatLng> points = trajectory.getPoints();
+		points.add(latlng);
+		trajectory.setPoints(points);
+	}
+	
+	private void setupSharingSummaryDialog(TripStatictics statsToShow){
+		LayoutInflater li = getLayoutInflater();
+		
+		View view = li.inflate(R.layout.sharingsummary, null);
+		
+		TextView duration = (TextView) view.findViewById(R.id.duration_field);
+		duration.setText(statsToShow.getCalculatedDurationAsFormattedString());
+		
+		TextView totalDistance = (TextView) view.findViewById(R.id.distance_field);
+		totalDistance.setText(statsToShow.getDistance());
+		
+		TextView averageAccuracy = (TextView) view.findViewById(R.id.accuracy_field);
+		averageAccuracy.setText(statsToShow.getAverageAccuracy());
+		
+		TextView averageSpeed = (TextView) view.findViewById(R.id.speed_field);
+		averageSpeed.setText(statsToShow.getAverageSpeed());
+		
+		new AlertDialog.Builder(Map.this)
+			.setCancelable(true)
+			.setTitle("Sharing Summary")
+			.setView(view)
+			.setNeutralButton("Close", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					dialog.dismiss();
+				}
+			})
+			.show();
+		
+		li = null;
+	}
+	
+	private void updateDurationInDashboard(String durationAsFormattedString){
+		durationField.setText(durationAsFormattedString);
 	}
 	
 	private ServiceConnection mConnection = new ServiceConnection() {
@@ -164,7 +230,7 @@ public class Map extends FragmentActivity {
 		
 		setupControlButton();
 		
-		setupStatsPanel();
+		setupDashboard();
 	}
 	
 	private void setupMapIfNotAvailable() {
@@ -201,9 +267,9 @@ public class Map extends FragmentActivity {
 			@Override
 			public void onClick(View v) {
 				if (shouldStopSharing()) {
-					setupConfirmStopDialog();
+					showConfirmStopSharingDialog();
 				} else {
-					setupStartSharingConnection();
+					prepareToStartSharing();
 				}
 			}
 		});
@@ -217,122 +283,13 @@ public class Map extends FragmentActivity {
 		}
 	}
 	
-	private void setupConfirmStopDialog(){
+	private void showConfirmStopSharingDialog(){
 		new AlertDialog.Builder(Map.this)	
 		.setMessage("are you sure you want to stop sharing?")
 		.setPositiveButton("yes", new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				Toast.makeText(Map.this, "sharing is STOPPED", Toast.LENGTH_SHORT).show();
-				controlButton.setText(R.string.control_button_start);
-				
-				sendMessageToService(Locator.STOP_SHARING_AND_SEND_SUMMARY);
-				
-				new AsyncTask<Void, Void, ConnectionResult>(){
-					
-					private ProgressDialog diag;
-					private String token;
-					
-					@Override
-					protected void onPreExecute() {
-						diag = new ProgressDialog(Map.this);
-						diag.setMessage("stopping...");
-						diag.setIndeterminate(true);
-						diag.setCancelable(false);
-						diag.show();
-						token = preference.getString("token", "invalidtoken");
-					};
-					
-					@Override
-					protected ConnectionResult doInBackground(Void... params) {
-						if(!Utility.isInternetAvailable(Map.this)){
-							//no internet, prompt user to check internet service and try again later
-							return ConnectionResult.NO_INTERNET;
-						} else if(token.contains("invaliduserid")){
-							return ConnectionResult.PARAMETER_ERROR;
-						} else {
-							//we have internet, now do the "initialize" connection
-							String url = "https://plash.iis.sinica.edu.tw:8080/LocationSharing?action=stop&token="
-									+ token;
-							Log.e("antrack.map", "stop connection, url=" + url);
-							
-							HttpClient client = null;
-							
-							try {
-								
-								client = Utility.getHttpsClient();
-								HttpGet request = new HttpGet(url);
-								HttpResponse response = client.execute(request);
-								
-								if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-									
-									BufferedReader in = new BufferedReader(new InputStreamReader(response.getEntity()
-											.getContent()));
-									
-									String readInputLine = null;
-									readInputLine = in.readLine();
-									
-									JSONObject result = new JSONObject(new JSONTokener(readInputLine));
-									in.close();
-									
-									Log.e("antrack.map", "stop connection, result=" + result.toString());
-									
-									preference.edit().remove("token").remove("url").commit();
-									
-									return ConnectionResult.ALL_GOOD;
-								}
-							} catch (IOException e) {
-								e.printStackTrace();
-							} catch (JSONException e) {
-								e.printStackTrace();
-							} finally {
-								
-								Log.e("antrack.map", "stop connection, finally");
-								
-								if (client != null) {
-									client.getConnectionManager().shutdown();
-								}
-							}
-						}
-						return ConnectionResult.CONNECTION_ERROR;
-					}
-					
-					@Override
-					protected void onPostExecute(ConnectionResult result) {
-						diag.dismiss();
-						switch(result){
-						case NO_INTERNET:
-							Toast.makeText(Map.this, "NO INTERNET", Toast.LENGTH_LONG).show();
-							break;
-						case ALL_GOOD:
-							Toast.makeText(Map.this, "ALL GOOD", Toast.LENGTH_LONG).show();
-							break;
-						case PARAMETER_ERROR:
-							Toast.makeText(Map.this, "INVALID USERID", Toast.LENGTH_LONG).show();
-							break;
-						case CONNECTION_ERROR:
-						default:
-							Toast.makeText(Map.this, "CONNECTION ERROR", Toast.LENGTH_LONG).show();
-							break;
-						}
-					};
-				}.execute();
-				
-				LayoutInflater li = getLayoutInflater();
-				
-				new AlertDialog.Builder(Map.this)
-					.setCancelable(true)
-					.setTitle("Sharing Summary")
-					.setView(li.inflate(R.layout.sharingsummary, null))
-					.setNeutralButton("Close", new DialogInterface.OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							dialog.dismiss();
-						}
-					})
-					.show();
-				
-				li = null;
+				prepareToStopSharing();
 			}
 		})
 		.setNegativeButton("no", new DialogInterface.OnClickListener() {
@@ -344,114 +301,35 @@ public class Map extends FragmentActivity {
 		.show();
 	}
 	
-	private void setupStartSharingConnection(){
+	private void prepareToStopSharing(){
+		Toast.makeText(Map.this, "sharing is STOPPED", Toast.LENGTH_SHORT).show();
+		controlButton.setText(R.string.control_button_start);
 		
-		new AsyncTask<Void, Void, ConnectionResult>(){
-			
-			private ProgressDialog diag;
-			private String userid;
-			
-			@Override
-			protected void onPreExecute() {
-				diag = new ProgressDialog(Map.this);
-				diag.setMessage("Contacting AnTrack location\nsharing service...");
-				diag.setIndeterminate(true);
-				diag.setCancelable(false);
-				diag.show();
-				userid = preference.getString("userid", "invaliduserid");
-			};
-			
-			@Override
-			protected ConnectionResult doInBackground(Void... params) {
-				if(!Utility.isInternetAvailable(Map.this)){
-					//no internet, prompt user to check internet service and try again later
-					return ConnectionResult.NO_INTERNET;
-				} else if(userid.contains("invaliduserid")){
-					return ConnectionResult.PARAMETER_ERROR;
-				} else {
-					//we have internet, now do the "initialize" connection
-					String url = "https://plash.iis.sinica.edu.tw:8080/LocationSharing?action=initialize&userid="
-							+ userid;
-					Log.e("antrack.map", "init connection, url=" + url);
-					
-					HttpClient client = null;
-					
-					try {
-						
-						client = Utility.getHttpsClient();
-						HttpGet request = new HttpGet(url);
-						HttpResponse response = client.execute(request);
-						
-						if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-							
-							BufferedReader in = new BufferedReader(new InputStreamReader(response.getEntity()
-									.getContent()));
-							
-							String readInputLine = null;
-							readInputLine = in.readLine();
-							
-							JSONObject result = new JSONObject(new JSONTokener(readInputLine));
-							in.close();
-							
-							Log.e("antrack.map", "init connection, result=" + result.toString());
-							
-							String token = result.getString("token");
-							String sharingUrl = result.getString("url");
-							
-							preference.edit().putString("token", token).putString("url", sharingUrl).commit();
-							
-							return ConnectionResult.ALL_GOOD;
-						}
-					} catch (IOException e) {
-						e.printStackTrace();
-					} catch (JSONException e) {
-						e.printStackTrace();
-					} finally {
-						
-						Log.e("antrack.map", "init connection, finally");
-						
-						if (client != null) {
-							client.getConnectionManager().shutdown();
-						}
-					}
-				}
-				return ConnectionResult.CONNECTION_ERROR;
-			}
-			
-			@Override
-			protected void onPostExecute(ConnectionResult result) {
-				diag.dismiss();
-				switch(result){
-				case NO_INTERNET:
-					Toast.makeText(Map.this, "NO INTERNET", Toast.LENGTH_LONG).show();
-					break;
-				case ALL_GOOD:
-					Toast.makeText(Map.this, "ALL GOOD", Toast.LENGTH_LONG).show();
-					controlButton.setText(R.string.control_button_stop);
-					//should notify service to show notification and keep running...
-					sendMessageToService(Locator.START_SHARING);
-					
-					Intent sendIntent = new Intent();
-					sendIntent.setAction(Intent.ACTION_SEND);
-					sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
-					sendIntent.putExtra(Intent.EXTRA_TEXT, "Click on the link to follow my lead..." + preference.getString("url", ""));
-					sendIntent.setType("text/plain");
-					startActivity(Intent.createChooser(sendIntent, "Share via..."));
-					
-					break;
-				case PARAMETER_ERROR:
-					Toast.makeText(Map.this, "INVALID USERID", Toast.LENGTH_LONG).show();
-					break;
-				case CONNECTION_ERROR:
-				default:
-					Toast.makeText(Map.this, "CONNECTION ERROR", Toast.LENGTH_LONG).show();
-					break;
-				}
-			};
-		}.execute();
+		sendMessageToService(Locator.SHARING_SUMMARY_REQUEST);
+		
+		executeStopSharingConnection();
 	}
 	
-	private void setupStatsPanel(){
+	private void executeStopSharingConnection() {
+		new StopConnection(Map.this, preference).execute();
+	}
+	
+	private void prepareToStartSharing(){
+		clearMapAndTrajectory();
+		setupStartSharingConnection();
+	}
+	
+	private void clearMapAndTrajectory(){
+		gmap.clear();
+		startingPoint = null;
+		trajectory = null;
+	}
+	
+	private void setupStartSharingConnection(){
+		new InitializeConnection(Map.this, preference, Map.this).execute();
+	}
+	
+	private void setupDashboard(){
 		latitudeField = (TextView) findViewById(R.id.latitude_field);
 		longitudeField = (TextView) findViewById(R.id.longitude_field);
 		durationField = (TextView) findViewById(R.id.duration_field);
@@ -529,5 +407,24 @@ public class Map extends FragmentActivity {
 		default:
 			return super.onOptionsItemSelected(item);
 		}
+	}
+
+	@Override
+	public void allGood() {
+		controlButton.setText(R.string.control_button_stop);
+		// should notify service to show notification and keep running...
+		sendMessageToService(Locator.START_SHARING);
+		
+		Intent sendIntent = new Intent();
+		sendIntent.setAction(Intent.ACTION_SEND);
+		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
+		sendIntent.putExtra(Intent.EXTRA_TEXT,
+				"Click on the link to follow my lead..." + preference.getString("url", ""));
+		sendIntent.setType("text/plain");
+		startActivity(Intent.createChooser(sendIntent, "Share via..."));
+	}
+	
+	@Override
+	public void setFollowerCount(int count) {
 	}
 }

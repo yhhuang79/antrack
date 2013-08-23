@@ -21,8 +21,9 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 
+import tw.plash.antrack.connection.AndroidSSLSocketFactory;
+
 import android.content.Context;
-import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
@@ -178,5 +179,10 @@ public class Utility {
 		}
 	}
 	
-	
+	public static String getDurationInSecondsAsFormattedString(long durationInSeconds){
+		Double hours = ((double) durationInSeconds) / 60 / 60;
+		Double minutes = (hours - hours.intValue()) * 60;
+		Double seconds = (minutes - minutes.intValue()) * 60;
+		return String.format("%d:%02d:%02d", hours.intValue(), minutes.intValue(), seconds.intValue());
+	}
 }
