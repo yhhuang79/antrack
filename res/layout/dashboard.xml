@@ -110,15 +110,14 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
             android:orientation="vertical" >
-
-            <TextView
+			
+            <Chronometer 
                 android:id="@+id/duration_field"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:text="n/a"
-                android:textSize="24sp" />
-
+                android:textSize="24sp"/>
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
