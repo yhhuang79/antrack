@@ -40,32 +40,19 @@ public class Locator extends Service implements LocationListener,
 	private LocationClient locationClient;
 	private LocationRequest locationRequest;
 	private SharedPreferences preference;
+	private Location previousLocation;
 	
 	private DBHelper dbhelper;
 	private TripStatictics stats;
 	
-	private long durationByTimerInSeconds;
-	private Timer durationTimer;
-	private TimerTask oneSecondTimerTask;
-	
 	private Messenger outgoingMessenger;
-	
-	public static final int ACTIVITY_REGISTER = 0;
-	public static final int ACTIVITY_DEREGISTER = 1;
-	public static final int START_SHARING = 2;
-	public static final int STOP_SHARING = 3;
-	public static final int SHARING_SUMMARY_REQUEST = 4;
-	public static final int SHARING_SUMMARY_REPLY = 5;
-	public static final int NEW_LOCATION_UPDATE = 6;
-	public static final int SYNC_CURRENT_TRAJECTORY = 7;
-	public static final int SHARING_DURATION_UPDATE = 8;
 	
 	final Messenger incomingMessenger = new Messenger(new IncomingHandler());
 	private class IncomingHandler extends Handler { 
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-			case ACTIVITY_REGISTER:
+			case IPCMessages.ACTIVITY_REGISTER:
 				Log.e("Locator.handleMessage", "ACTIVITY_REGISTER");
 				outgoingMessenger = msg.replyTo;
 				if(isSharingLocation()){
@@ -73,17 +60,17 @@ public class Locator extends Service implements LocationListener,
 					syncInformationWithActivity();
 				}
 				break;
-			case ACTIVITY_DEREGISTER:
+			case IPCMessages.ACTIVITY_DEREGISTER:
 				Log.e("Locator.handleMessage", "ACTIVITY_DEREGISTER");
 				if(outgoingMessenger == msg.replyTo){
 					outgoingMessenger = null;
 				}
 				break;
-			case START_SHARING:
+			case IPCMessages.START_SHARING:
 				Log.e("Locator.handleMessage", "START_SHARING");
 				prepareToStartSharing();
 				break;
-			case SHARING_SUMMARY_REQUEST:
+			case IPCMessages.SHARING_SUMMARY_REQUEST:
 				Log.e("Locator.handleMessage", "SHARING_SUMMARY_REQUEST");
 				prepareToStopSharing();
 				break;
@@ -97,7 +84,7 @@ public class Locator extends Service implements LocationListener,
 		ArrayList<Location> locations = (ArrayList<Location>) dbhelper.getAllDisplayableLocations();
 		Bundle bundle = new Bundle();
 		bundle.putSerializable("trajectory", locations);
-		sendMessageToUI(SYNC_CURRENT_TRAJECTORY, bundle);
+		sendMessageToUI(IPCMessages.SYNC_CURRENT_TRAJECTORY, bundle);
 	}
 	
 	private void prepareToStartSharing(){
@@ -109,18 +96,7 @@ public class Locator extends Service implements LocationListener,
 	private void resetVariables(){
 		dbhelper.removeAllLocations();
 		stats.resetStats();
-		oneSecondTimerTask = new TimerTask() {
-			@Override
-			public void run() {
-				durationByTimerInSeconds += 1;
-				Bundle bundle = new Bundle();
-				bundle.putString("durationInSeconds", Utility.getDurationInSecondsAsFormattedString(durationByTimerInSeconds));
-				sendMessageToUI(SHARING_DURATION_UPDATE, bundle);
-			}
-		};
-		durationTimer.purge();
-		durationByTimerInSeconds = 0;
-		durationTimer.scheduleAtFixedRate(oneSecondTimerTask, 0, 1000);
+		previousLocation = null;
 	}
 	
 	private void showNotification(){
@@ -132,11 +108,9 @@ public class Locator extends Service implements LocationListener,
 	
 	private void prepareToStopSharing(){
 		serviceIsSharingLocation = false;
-		oneSecondTimerTask.cancel();
-		durationTimer.purge();
 		Bundle bundle = new Bundle();
 		bundle.putSerializable("stats", stats);
-		sendMessageToUI(SHARING_SUMMARY_REPLY, bundle);
+		sendMessageToUI(IPCMessages.SHARING_SUMMARY_REPLY, bundle);
 		stopForeground(true);
 	}
 	
@@ -166,8 +140,6 @@ public class Locator extends Service implements LocationListener,
 		preference = PreferenceManager.getDefaultSharedPreferences(Locator.this);
 		
 		stats = new TripStatictics();
-		
-		durationTimer = new Timer();
 		
 		dbhelper = new DBHelper(Locator.this);
 	}
@@ -212,13 +184,6 @@ public class Locator extends Service implements LocationListener,
 		
 		stats = null;
 		
-		oneSecondTimerTask.cancel();
-		oneSecondTimerTask = null;
-		
-		durationTimer.purge();
-		durationTimer.cancel();
-		durationTimer = null;
-		
 		dbhelper.closeDB();
 		dbhelper = null;
 		
@@ -254,13 +219,19 @@ public class Locator extends Service implements LocationListener,
 			processLocationToBeDisplayed(location);
 		} else {
 			dbhelper.insert(location, NODISPLAY);
-			//no going to display this location, no process needed
+			//no going to display this location, no processing needed
 		}
 	}
 	
 	private boolean shouldDisplayThisLocation(Location location){
-		//XXX some filtering needed
-		return true;
+		boolean result = false;
+		if(Utility.isValidLocation(location)){
+			if((previousLocation == null) || !Utility.isWithinAccuracyBound(previousLocation, location)){
+				result = true;
+			}
+			previousLocation = location;
+		}
+		return result;
 	}
 	
 	private void processLocationToBeDisplayed(Location location){
@@ -273,7 +244,7 @@ public class Locator extends Service implements LocationListener,
 			bundle.putSerializable("stats", stats);
 			uploadLocationToServer(location);
 		}
-		sendMessageToUI(NEW_LOCATION_UPDATE, bundle);
+		sendMessageToUI(IPCMessages.NEW_LOCATION_UPDATE, bundle);
 	}
 	
 	private void uploadLocationToServer(Location location){

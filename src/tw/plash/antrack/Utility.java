@@ -21,9 +21,11 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 
-import tw.plash.antrack.connection.AndroidSSLSocketFactory;
+import com.google.android.gms.maps.model.LatLng;
 
+import tw.plash.antrack.connection.AndroidSSLSocketFactory;
 import android.content.Context;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
@@ -33,6 +35,8 @@ import android.net.NetworkInfo;
  * @author Joao Bispo
  */
 public class Utility {
+	
+	private static final double earthRadiusInMeters = 6371008.7714;
 	
 	private static final long MASK_16_BITS = 0xFFFFL;
 	private static final int MASK_BIT_1 = 0x1;
@@ -184,5 +188,53 @@ public class Utility {
 		Double minutes = (hours - hours.intValue()) * 60;
 		Double seconds = (minutes - minutes.intValue()) * 60;
 		return String.format("%d:%02d:%02d", hours.intValue(), minutes.intValue(), seconds.intValue());
+	}
+	
+	public static boolean isValidLocation(Location location){
+		double latitude = location.getLatitude();
+		double longitude = location.getLongitude();
+		if(latitude > -90){
+			if(latitude < 90){
+				if(longitude > -180){
+					if(longitude < 180){
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	public static boolean isWithinAccuracyBound(Location previousLocation, Location currentlocation){
+		double accuracy = currentlocation.getAccuracy();
+		if(getDistance(previousLocation, currentlocation) < accuracy){
+			return true;
+		} else{
+			return false;
+		}
+	}
+	
+	private static double getDistance(double fromLatitude, double fromLongitude, double toLatitude, double toLongitude) {
+		double dlat = toRad(toLatitude - fromLatitude);
+		double dlon = toRad(toLongitude - fromLongitude);
+		double latone = toRad(fromLatitude);
+		double lattwo = toRad(toLatitude);
+		double a = Math.sin(dlat / 2) * Math.sin(dlat / 2) + Math.sin(dlon / 2) * Math.sin(dlon / 2) * Math.cos(latone)
+				* Math.cos(lattwo);
+		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		return earthRadiusInMeters * c;
+	}
+	
+	public static double getDistance(LatLng fromLatlng, LatLng toLatlng) {
+		return getDistance(fromLatlng.latitude, fromLatlng.longitude, toLatlng.latitude, toLatlng.longitude);
+	}
+	
+	public static double getDistance(Location fromLocation, Location toLocation) {
+		return getDistance(fromLocation.getLatitude(), fromLocation.getLongitude(), toLocation.getLatitude(),
+				toLocation.getLongitude());
+	}
+	
+	private static double toRad(Double degree) {
+		return degree / 180 * Math.PI;
 	}
 }

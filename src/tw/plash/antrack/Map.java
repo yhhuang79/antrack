@@ -19,6 +19,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -28,6 +29,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Chronometer;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,17 +49,16 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	private SharedPreferences preference;
 	
 	private GoogleMap gmap;
+	private MapDrawer mapDrawer;
+	
 	private Button controlButton;
 	private TextView latitudeField;
 	private TextView longitudeField;
-	private TextView durationField;
+	private Chronometer durationTimer;
 	private TextView distanceField;
 	private TextView accuracyField;
 	private TextView speedField;
 	private TextView numberOfWatcherField;
-	
-	private MarkerOptions startingPoint;
-	private Polyline trajectory;
 	
 	private OnLocationChangedListener onLocationChangedListener;
 	
@@ -70,30 +71,26 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 		public void handleMessage(Message msg) {
 			Bundle bundle = msg.getData();
 			Location location = bundle.getParcelable("location");
-			String durationAsFormattedString = bundle.getString("durationInSeconds");
 			TripStatictics stats = (TripStatictics) bundle.getSerializable("stats");
 			ArrayList<Location> locations = (ArrayList<Location>) msg.getData().getSerializable("trajectory");
 			switch (msg.what) {
-			case Locator.SYNC_CURRENT_TRAJECTORY:
+			case IPCMessages.SYNC_CURRENT_TRAJECTORY:
 				Log.w("map.incominghandler", "SYNC_CURRENT_TRAJECTORY");
 				if(!locations.isEmpty()){
 					clearMapAndDrawSyncedTrajectory(locations);
 				}
 				break;
-			case Locator.NEW_LOCATION_UPDATE:
+			case IPCMessages.NEW_LOCATION_UPDATE:
 				Log.w("map.incominghandler", "NEW_LOCATION_UPDATE");
 				onLocationChangedListener.onLocationChanged(location);
 				updateDashboard(location, stats);
 				if(Locator.isSharingLocation()){
-					updateCurrentTrajectory(location);
+					mapDrawer.addLocation(location);
 				}
 				break;
-			case Locator.SHARING_SUMMARY_REPLY:
+			case IPCMessages.SHARING_SUMMARY_REPLY:
 				Log.w("map.incominghandler", "SHARING_SUMMARY_REPLY");
 				setupSharingSummaryDialog(stats);
-				break;
-			case Locator.SHARING_DURATION_UPDATE:
-				updateDurationInDashboard(durationAsFormattedString);
 				break;
 			default:
 				super.handleMessage(msg);
@@ -102,21 +99,8 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	}
 	
 	private void clearMapAndDrawSyncedTrajectory(List<Location> locations){
-		clearMapAndTrajectory();
-		LatLngBounds.Builder boundBuilder = new LatLngBounds.Builder();
-		PolylineOptions polyline = new PolylineOptions();
-		for(Location location : locations){
-			LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
-			if(startingPoint == null){
-				startingPoint = new MarkerOptions().position(latlng).title("Start");
-			}
-			polyline.add(latlng);
-			boundBuilder.include(latlng);
-		}
-		trajectory = gmap.addPolyline(polyline);
-		gmap.addMarker(startingPoint);
-		//zoom out to show entire trajectory
-		gmap.animateCamera(CameraUpdateFactory.newLatLngBounds(boundBuilder.build(), 5));
+		mapDrawer.clearMap();
+		mapDrawer.drawLocations(locations);
 	}
 	
 	private void updateDashboard(Location location, TripStatictics stats){
@@ -130,66 +114,18 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 		speedField.setText(String.format("%.2f", location.getSpeed()));
 	}
 	
-	private void updateCurrentTrajectory(Location location){
-		LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
-		if(startingPoint == null){
-			startingPoint = new MarkerOptions().position(latlng).title("Start");
-			gmap.addMarker(startingPoint);
-		}
-		if(trajectory == null){
-			trajectory = gmap.addPolyline(new PolylineOptions().add(latlng));
-		} else{
-			updateTrajectoryPointList(latlng);
-		}
-	}
-	
-	private void updateTrajectoryPointList(LatLng latlng){
-		List<LatLng> points = trajectory.getPoints();
-		points.add(latlng);
-		trajectory.setPoints(points);
-	}
-	
 	private void setupSharingSummaryDialog(TripStatictics statsToShow){
-		LayoutInflater li = getLayoutInflater();
-		
-		View view = li.inflate(R.layout.sharingsummary, null);
-		
-		TextView duration = (TextView) view.findViewById(R.id.duration_field);
-		duration.setText(statsToShow.getCalculatedDurationAsFormattedString());
-		
-		TextView totalDistance = (TextView) view.findViewById(R.id.distance_field);
-		totalDistance.setText(statsToShow.getDistance());
-		
-		TextView averageAccuracy = (TextView) view.findViewById(R.id.accuracy_field);
-		averageAccuracy.setText(statsToShow.getAverageAccuracy());
-		
-		TextView averageSpeed = (TextView) view.findViewById(R.id.speed_field);
-		averageSpeed.setText(statsToShow.getAverageSpeed());
-		
-		new AlertDialog.Builder(Map.this)
-			.setCancelable(true)
-			.setTitle("Sharing Summary")
-			.setView(view)
-			.setNeutralButton("Close", new DialogInterface.OnClickListener() {
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					dialog.dismiss();
-				}
-			})
-			.show();
-		
-		li = null;
-	}
-	
-	private void updateDurationInDashboard(String durationAsFormattedString){
-		durationField.setText(durationAsFormattedString);
+		SharingSummaryDialog summary = new SharingSummaryDialog(Map.this);
+		statsToShow.setBaseTimeFromChronometer(durationTimer.getBase());
+		summary.setTripStatistics(statsToShow);
+		summary.show();
 	}
 	
 	private ServiceConnection mConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			messengerToService = new Messenger(service);
 			try {
-				Message msg = Message.obtain(null, Locator.ACTIVITY_REGISTER);
+				Message msg = Message.obtain(null, IPCMessages.ACTIVITY_REGISTER);
 				msg.replyTo = messengerFromService;
 				messengerToService.send(msg);
 			} catch (RemoteException e) {
@@ -236,6 +172,7 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	private void setupMapIfNotAvailable() {
 		if (gmap == null) {
 			gmap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
+			mapDrawer = new MapDrawer(gmap);
 			setUpMap();
 		}
 	}
@@ -303,9 +240,10 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	
 	private void prepareToStopSharing(){
 		Toast.makeText(Map.this, "sharing is STOPPED", Toast.LENGTH_SHORT).show();
+		durationTimer.stop();
 		controlButton.setText(R.string.control_button_start);
 		
-		sendMessageToService(Locator.SHARING_SUMMARY_REQUEST);
+		sendMessageToService(IPCMessages.SHARING_SUMMARY_REQUEST);
 		
 		executeStopSharingConnection();
 	}
@@ -315,14 +253,8 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	}
 	
 	private void prepareToStartSharing(){
-		clearMapAndTrajectory();
+		mapDrawer.clearMap();
 		setupStartSharingConnection();
-	}
-	
-	private void clearMapAndTrajectory(){
-		gmap.clear();
-		startingPoint = null;
-		trajectory = null;
 	}
 	
 	private void setupStartSharingConnection(){
@@ -332,7 +264,7 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	private void setupDashboard(){
 		latitudeField = (TextView) findViewById(R.id.latitude_field);
 		longitudeField = (TextView) findViewById(R.id.longitude_field);
-		durationField = (TextView) findViewById(R.id.duration_field);
+		durationTimer = (Chronometer) findViewById(R.id.duration_field);
 		distanceField = (TextView) findViewById(R.id.distance_field);
 		accuracyField = (TextView) findViewById(R.id.accuracy_field);
 		speedField = (TextView) findViewById(R.id.speed_field);
@@ -344,6 +276,10 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 		super.onResume();
 		startServiceIfNotAlreadyRunning();
 		bindToService();
+		if(Locator.isSharingLocation()){
+			durationTimer.setBase(preference.getLong("CHRONOMETER", 0L));
+			durationTimer.start();
+		}
 	}
 	
 	private void startServiceIfNotAlreadyRunning() {
@@ -364,6 +300,10 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 		super.onPause();
 		unbindFromService();
 		stopServiceIfNotSharing();
+		if(Locator.isSharingLocation()){
+			preference.edit().putLong("CHRONOMETER", durationTimer.getBase()).commit();
+			durationTimer.stop();
+		}
 	}
 	
 	void unbindFromService() {
@@ -372,7 +312,7 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 			// then now is the time to unregister.
 			if (messengerToService != null) {
 				try {
-					Message msg = Message.obtain(null, Locator.ACTIVITY_DEREGISTER);
+					Message msg = Message.obtain(null, IPCMessages.ACTIVITY_DEREGISTER);
 					msg.replyTo = messengerFromService;
 					messengerToService.send(msg);
 				} catch (RemoteException e) {
@@ -411,9 +351,11 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 
 	@Override
 	public void allGood() {
+		durationTimer.setBase(SystemClock.elapsedRealtime());
+		durationTimer.start();
 		controlButton.setText(R.string.control_button_stop);
 		// should notify service to show notification and keep running...
-		sendMessageToService(Locator.START_SHARING);
+		sendMessageToService(IPCMessages.START_SHARING);
 		
 		Intent sendIntent = new Intent();
 		sendIntent.setAction(Intent.ACTION_SEND);

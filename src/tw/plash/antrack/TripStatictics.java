@@ -5,6 +5,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.location.Location;
+import android.os.SystemClock;
 
 public class TripStatictics implements Serializable{
 	
@@ -20,14 +21,14 @@ public class TripStatictics implements Serializable{
 	private double averageSpeed;
 	private int pointCounter;
 	
-	private long calculatedDurationInMilliseconds;
+	private long baseTimeFromChorometerInMilliseconds;
 	private int numberOfWatcher;
 	
 	private Location previousLocation;
 	
 	public TripStatictics() {
 		totalDistance = 0;
-		calculatedDurationInMilliseconds = 0;
+		baseTimeFromChorometerInMilliseconds = 0;
 		averageAccuracy = 0;
 		averageSpeed = 0;
 		pointCounter = 0;
@@ -38,7 +39,7 @@ public class TripStatictics implements Serializable{
 	
 	public void resetStats(){
 		totalDistance = 0;
-		calculatedDurationInMilliseconds = 0;
+		baseTimeFromChorometerInMilliseconds = 0;
 		averageAccuracy = 0;
 		averageSpeed = 0;
 		pointCounter = 0;
@@ -51,7 +52,6 @@ public class TripStatictics implements Serializable{
 		pointCounter += 1;
 		if(previousLocation != null){
 			totalDistance += getGreatCircleDistance(location);
-			calculatedDurationInMilliseconds += (location.getTime() - previousLocation.getTime());
 			
 			double accuracySum = averageAccuracy * (pointCounter - 1);
 			averageAccuracy = (accuracySum + location.getAccuracy()) / pointCounter;
@@ -76,8 +76,13 @@ public class TripStatictics implements Serializable{
 		return degree/180*Math.PI;
 	}
 	
-	public String getCalculatedDurationAsFormattedString(){
-		return Utility.getDurationInSecondsAsFormattedString((calculatedDurationInMilliseconds / 1000));
+	public void setBaseTimeFromChronometer(long baseTimeFromChronometer){
+		baseTimeFromChorometerInMilliseconds = baseTimeFromChronometer;
+	}
+	
+	public String getFormattedElapsedTime(){
+		long elapsedTimeInMilliseconds = SystemClock.elapsedRealtime() - baseTimeFromChorometerInMilliseconds;
+		return Utility.getDurationInSecondsAsFormattedString((elapsedTimeInMilliseconds / 1000));
 	}
 	
 	public String getDistance(){
@@ -97,6 +102,6 @@ public class TripStatictics implements Serializable{
 	}
 	
 	public String getNumberOfWatcher(){
-		return numberOfWatcher + " people are following you";
+		return numberOfWatcher + " people followed you";
 	}
 }
