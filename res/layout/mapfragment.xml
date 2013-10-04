@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/map_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+   <!--  <TextView
+        android:id="@+id/map_message"
+        style="@style/TextMedium.WithIcon"
+        android:layout_width="match_parent"
+        android:layout_alignParentTop="true"
+        android:background="@color/warning_background"
+        android:drawableLeft="@drawable/ic_warning"
+        android:gravity="left|center_vertical"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:visibility="gone" /> -->
+
+    <ImageButton
+        android:id="@+id/map_my_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp" 
+        android:visibility="gone"/>
+<!--         android:background="@drawable/my_location" -->
+<!--         android:contentDescription="@string/icon_my_location"  -->
+
+</RelativeLayout>

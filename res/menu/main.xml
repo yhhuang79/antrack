@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" 
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/camera"
+        android:icon="@drawable/device_access_camera"
+        app:showAsAction="never"
+        android:title="Help">
+    </item>
+    
+    <item
+        android:id="@+id/camera2"
+        android:icon="@drawable/device_access_camera"
+        app:showAsAction="never"
+        android:title="Settings">
+    </item>
+    
+</menu>
