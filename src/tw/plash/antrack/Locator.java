@@ -1,10 +1,9 @@
 package tw.plash.antrack;
 
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
-import tw.plash.antrack.connection.UploadConnection;
+import org.json.JSONException;
+
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -28,8 +27,7 @@ import com.google.android.gms.location.LocationRequest;
 
 public class Locator extends Service implements LocationListener, 
 		GooglePlayServicesClient.ConnectionCallbacks,
-		GooglePlayServicesClient.OnConnectionFailedListener,
-		ConnectionResultCallback{
+		GooglePlayServicesClient.OnConnectionFailedListener{
 	
 	private static boolean serviceIsRunning = false;
 	private static boolean serviceIsSharingLocation = false;
@@ -52,7 +50,7 @@ public class Locator extends Service implements LocationListener,
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-			case IPCMessages.ACTIVITY_REGISTER:
+			case LocalBroadcastMessages.ACTIVITY_REGISTER:
 				Log.e("Locator.handleMessage", "ACTIVITY_REGISTER");
 				outgoingMessenger = msg.replyTo;
 				if(isSharingLocation()){
@@ -60,17 +58,17 @@ public class Locator extends Service implements LocationListener,
 					syncInformationWithActivity();
 				}
 				break;
-			case IPCMessages.ACTIVITY_DEREGISTER:
+			case LocalBroadcastMessages.ACTIVITY_DEREGISTER:
 				Log.e("Locator.handleMessage", "ACTIVITY_DEREGISTER");
 				if(outgoingMessenger == msg.replyTo){
 					outgoingMessenger = null;
 				}
 				break;
-			case IPCMessages.START_SHARING:
+			case LocalBroadcastMessages.START_SHARING:
 				Log.e("Locator.handleMessage", "START_SHARING");
 				prepareToStartSharing();
 				break;
-			case IPCMessages.SHARING_SUMMARY_REQUEST:
+			case LocalBroadcastMessages.SHARING_SUMMARY_REQUEST:
 				Log.e("Locator.handleMessage", "SHARING_SUMMARY_REQUEST");
 				prepareToStopSharing();
 				break;
@@ -84,7 +82,7 @@ public class Locator extends Service implements LocationListener,
 		ArrayList<Location> locations = (ArrayList<Location>) dbhelper.getAllDisplayableLocations();
 		Bundle bundle = new Bundle();
 		bundle.putSerializable("trajectory", locations);
-		sendMessageToUI(IPCMessages.SYNC_CURRENT_TRAJECTORY, bundle);
+		sendMessageToUI(LocalBroadcastMessages.SYNC_CURRENT_TRAJECTORY, bundle);
 	}
 	
 	private void prepareToStartSharing(){
@@ -101,7 +99,7 @@ public class Locator extends Service implements LocationListener,
 	
 	private void showNotification(){
 		Notification notification = new Notification(R.drawable.ic_launcher, "sharing has started", System.currentTimeMillis());
-		PendingIntent pendingIntent = PendingIntent.getActivity(Locator.this, 0, new Intent(Locator.this, Map.class), PendingIntent.FLAG_UPDATE_CURRENT);
+		PendingIntent pendingIntent = PendingIntent.getActivity(Locator.this, 0, new Intent(Locator.this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
 		notification.setLatestEventInfo(Locator.this, "AnTrack", "sharing...", pendingIntent);
 		startForeground(1337, notification);
 	}
@@ -110,7 +108,7 @@ public class Locator extends Service implements LocationListener,
 		serviceIsSharingLocation = false;
 		Bundle bundle = new Bundle();
 		bundle.putSerializable("stats", stats);
-		sendMessageToUI(IPCMessages.SHARING_SUMMARY_REPLY, bundle);
+		sendMessageToUI(LocalBroadcastMessages.SHARING_SUMMARY_REPLY, bundle);
 		stopForeground(true);
 	}
 	
@@ -242,21 +240,18 @@ public class Locator extends Service implements LocationListener,
 		if (serviceIsSharingLocation) {
 			stats.addLocation(location);
 			bundle.putSerializable("stats", stats);
-			uploadLocationToServer(location);
+			//pass through filter first...
+			uploadLocationToServer(location, true);
 		}
-		sendMessageToUI(IPCMessages.NEW_LOCATION_UPDATE, bundle);
+		sendMessageToUI(LocalBroadcastMessages.NEW_LOCATION_UPDATE, bundle);
 	}
 	
-	private void uploadLocationToServer(Location location){
-		new UploadConnection(Locator.this, preference, Locator.this).execute(location);
-	}
-
-	@Override
-	public void allGood() {
-	}
-
-	@Override
-	public void setFollowerCount(int count) {
-		stats.setNumberOfWatcher(count);
+	private void uploadLocationToServer(Location location, boolean toDisplay){
+		String token = preference.getString("token", null);
+		try {
+			AntrackSingleton.getInstance(getApplication()).getApi().upload(token, location, toDisplay, null, null);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 	}
 }

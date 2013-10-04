@@ -1,6 +1,6 @@
 package tw.plash.antrack;
 
-public interface IPCMessages {
+public interface LocalBroadcastMessages {
 	//all message types pass between service and activity
 	public static final int ACTIVITY_REGISTER = 0;
 	public static final int ACTIVITY_DEREGISTER = 1;

@@ -154,7 +154,8 @@ public class Tutorial extends Activity {
 			@Override
 			public void onClick(View v) {
 				String name = et.getEditableText().toString();
-				if (name.isEmpty()) {
+//				if (name.isEmpty()) {
+				if (name.length() < 1) {
 					et.setError("please enter a name");
 				} else {
 					Toast.makeText(Tutorial.this, "Hi! " + name, Toast.LENGTH_SHORT).show();
@@ -180,7 +181,7 @@ public class Tutorial extends Activity {
 	}
 	
 	private void finishThisAndGoToMapActivity(){
-		startActivity(new Intent(Tutorial.this, Map.class));
+		startActivity(new Intent(Tutorial.this, MainActivity.class));
 		finish();
 	}
 }

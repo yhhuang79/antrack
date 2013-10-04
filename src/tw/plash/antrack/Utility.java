@@ -1,8 +1,10 @@
 package tw.plash.antrack;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 
@@ -21,13 +23,13 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 
-import com.google.android.gms.maps.model.LatLng;
-
 import tw.plash.antrack.connection.AndroidSSLSocketFactory;
 import android.content.Context;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+
+import com.google.android.gms.maps.model.LatLng;
 
 /**
  * Methods for bit manipulation.
@@ -236,5 +238,17 @@ public class Utility {
 	
 	private static double toRad(Double degree) {
 		return degree / 180 * Math.PI;
+	}
+	
+	public static String encode(String input){
+		String output = null;
+		try {
+			output = URLEncoder.encode(input, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			output = input;
+		}
+//		Log.e("correct url encoder", "outParam=" + output);
+		return output;
 	}
 }

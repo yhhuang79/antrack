@@ -20,7 +20,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import tw.plash.antrack.ConnectionResultCallback;
 import tw.plash.antrack.Utility;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -33,12 +32,10 @@ public class UploadConnection extends AsyncTask<Location, Void, Void> {
 	private Context context;
 	private SharedPreferences preference;
 	private String token;
-	private ConnectionResultCallback crc;
 	
-	public UploadConnection(Context context, SharedPreferences preference, ConnectionResultCallback crc) {
+	public UploadConnection(Context context, SharedPreferences preference) {
 		this.context = context;
 		this.preference = preference;
-		this.crc = crc;
 	}
 	
 	@Override
@@ -91,8 +88,6 @@ public class UploadConnection extends AsyncTask<Location, Void, Void> {
 				in.close();
 				
 				int numberOfWatchers = result.getInt("number_of_watcher");
-				
-				crc.setFollowerCount(numberOfWatchers);
 				
 				Log.e("Locator.onLocationChanged", "upload: result=" + result.toString());
 			}

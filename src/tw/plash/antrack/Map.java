@@ -33,6 +33,8 @@ import android.widget.Chronometer;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
@@ -44,7 +46,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-public class Map extends FragmentActivity implements ConnectionResultCallback{
+public class Map extends FragmentActivity {
+	
+	private RequestQueue mRequestQueue;
 	
 	private SharedPreferences preference;
 	
@@ -52,11 +56,8 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	private MapDrawer mapDrawer;
 	
 	private Button controlButton;
-	private TextView latitudeField;
-	private TextView longitudeField;
 	private Chronometer durationTimer;
 	private TextView distanceField;
-	private TextView accuracyField;
 	private TextView speedField;
 	private TextView numberOfWatcherField;
 	
@@ -104,13 +105,10 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	}
 	
 	private void updateDashboard(Location location, TripStatictics stats){
-		latitudeField.setText(String.format("%9.5f", location.getLatitude()));
-		longitudeField.setText(String.format("%9.5f", location.getLongitude()));
 		if(stats != null){
 			distanceField.setText(stats.getDistance());
 			numberOfWatcherField.setText(stats.getNumberOfWatcher());
 		}
-		accuracyField.setText(String.format("%.1f", location.getAccuracy()));
 		speedField.setText(String.format("%.2f", location.getSpeed()));
 	}
 	
@@ -258,15 +256,13 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 	}
 	
 	private void setupStartSharingConnection(){
-		new InitializeConnection(Map.this, preference, Map.this).execute();
+		mRequestQueue = Volley.newRequestQueue(getApplicationContext());
+//		new InitializeConnection(Map.this, preference).execute();
 	}
 	
 	private void setupDashboard(){
-		latitudeField = (TextView) findViewById(R.id.latitude_field);
-		longitudeField = (TextView) findViewById(R.id.longitude_field);
 		durationTimer = (Chronometer) findViewById(R.id.duration_field);
 		distanceField = (TextView) findViewById(R.id.distance_field);
-		accuracyField = (TextView) findViewById(R.id.accuracy_field);
 		speedField = (TextView) findViewById(R.id.speed_field);
 		numberOfWatcherField = (TextView) findViewById(R.id.number_of_watchers);
 	}
@@ -349,24 +345,17 @@ public class Map extends FragmentActivity implements ConnectionResultCallback{
 		}
 	}
 
-	@Override
-	public void allGood() {
-		durationTimer.setBase(SystemClock.elapsedRealtime());
-		durationTimer.start();
-		controlButton.setText(R.string.control_button_stop);
-		// should notify service to show notification and keep running...
-		sendMessageToService(IPCMessages.START_SHARING);
-		
-		Intent sendIntent = new Intent();
-		sendIntent.setAction(Intent.ACTION_SEND);
-		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
-		sendIntent.putExtra(Intent.EXTRA_TEXT,
-				"Click on the link to follow my lead..." + preference.getString("url", ""));
-		sendIntent.setType("text/plain");
-		startActivity(Intent.createChooser(sendIntent, "Share via..."));
-	}
-	
-	@Override
-	public void setFollowerCount(int count) {
-	}
+//		durationTimer.setBase(SystemClock.elapsedRealtime());
+//		durationTimer.start();
+//		controlButton.setText(R.string.control_button_stop);
+//		// should notify service to show notification and keep running...
+//		sendMessageToService(IPCMessages.START_SHARING);
+//		
+//		Intent sendIntent = new Intent();
+//		sendIntent.setAction(Intent.ACTION_SEND);
+//		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
+//		sendIntent.putExtra(Intent.EXTRA_TEXT,
+//				"Click on the link to follow my lead..." + preference.getString("url", ""));
+//		sendIntent.setType("text/plain");
+//		startActivity(Intent.createChooser(sendIntent, "Share via..."));
 }

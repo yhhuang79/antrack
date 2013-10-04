@@ -12,44 +12,33 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import tw.plash.antrack.ConnectionResultCallback;
 import tw.plash.antrack.Utility;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
+import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 import android.widget.Toast;
 
-public class InitializeConnection extends AsyncTask<Void, Void, Integer> {
+public class InitializeConnection extends AsyncTaskLoader<String> {
 	
 	private final int NO_INTERNET = 0;
 	private final int PARAMETER_ERROR = 1;
 	private final int CONNECTION_ERROR = 2;
 	private final int ALL_GOOD = 3;
 	
-	private ProgressDialog diag;
 	private Context context;
 	private SharedPreferences preference;
 	private String userid;
+	private String tokenurl;
 	
-	private ConnectionResultCallback crc;
-	
-	public InitializeConnection(Context context, SharedPreferences preference, ConnectionResultCallback crc) {
+	public InitializeConnection(Context context, SharedPreferences preference) {
+		super(context);
 		this.context = context;
 		this.preference = preference;
-		this.crc = crc;
+		this.tokenurl = null;
+		userid = preference.getString("userid", "invaliduserid");
 	}
 	
-	@Override
-	protected void onPreExecute() {
-		diag = new ProgressDialog(context);
-		diag.setMessage("Contacting AnTrack location\nsharing service...");
-		diag.setIndeterminate(true);
-		diag.setCancelable(false);
-		diag.show();
-		userid = preference.getString("userid", "invaliduserid");
-	};
 	
 	@Override
 	protected Integer doInBackground(Void... params) {
@@ -108,23 +97,41 @@ public class InitializeConnection extends AsyncTask<Void, Void, Integer> {
 	}
 	
 	@Override
-	protected void onPostExecute(Integer result) {
-		diag.dismiss();
-		switch (result) {
-		case NO_INTERNET:
-			Toast.makeText(context, "NO INTERNET", Toast.LENGTH_LONG).show();
-			break;
-		case ALL_GOOD:
-			Toast.makeText(context, "ALL GOOD", Toast.LENGTH_LONG).show();
-			crc.allGood();
-			break;
-		case PARAMETER_ERROR:
-			Toast.makeText(context, "INVALID USERID", Toast.LENGTH_LONG).show();
-			break;
-		case CONNECTION_ERROR:
-		default:
-			Toast.makeText(context, "CONNECTION ERROR", Toast.LENGTH_LONG).show();
-			break;
-		}
+	public String loadInBackground() {
+		// TODO Auto-generated method stub
+		return null;
 	};
+	
+	@Override
+	public void deliverResult(String data) {
+		if(isStarted()){
+			super.deliverResult(data);
+		}
+	}
+	
+	@Override
+	protected void onStartLoading() {
+		if(tokenurl != null){
+			deliverResult(tokenurl);
+		}
+		if(takeContentChanged() || tokenurl == null){
+			forceLoad();
+		}
+	}
+	
+	@Override
+	protected void onStopLoading() {
+		cancelLoad();
+	}
+	
+	@Override
+	protected void onReset() {
+		super.onReset();
+		
+		onStopLoading();
+		
+		if(tokenurl != null){
+			tokenurl = null;
+		}
+	}
 }
