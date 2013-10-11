@@ -41,8 +41,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="MainActivity"
-            android:configChanges="orientation|screenLayout">
+            android:name="AntrackMapActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize">
            <!--  android:uiOptions="splitActionBarWhenNarrow" >
             <meta-data
                 android:name="android.support.UI_OPTIONS"
@@ -52,9 +52,7 @@
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyCFt3m5FxfGk-beR6Fc6CGRTIrLfROjoao" />
-
-        <service android:name="Locator" >
-        </service>
+        <service android:name="AntrackService"></service>
     </application>
 
 </manifest>
