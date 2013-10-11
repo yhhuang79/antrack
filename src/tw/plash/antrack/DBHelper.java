@@ -68,7 +68,7 @@ public class DBHelper {
 		}
 	}
 	
-	synchronized public long insert(Location location, int toDisplay) {
+	synchronized public long insert(Location location, boolean toDisplay) {
 		if (db.isOpen()) {
 			ContentValues cv = new ContentValues();
 			cv.put("latitude", location.getLatitude());
@@ -79,7 +79,7 @@ public class DBHelper {
 			cv.put("bearing", location.getBearing());
 			cv.put("locationsource", location.getProvider());
 			cv.put("time", location.getTime());
-			cv.put("todisplay", toDisplay);
+			cv.put("todisplay", toDisplay? 1 : 0);
 			return db.insert(CURRENT_TRIP_TABLE, null, cv);
 		} else {
 			return ERROR_DB_IS_CLOSED;

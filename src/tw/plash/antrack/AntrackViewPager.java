@@ -10,13 +10,17 @@ public class AntrackViewPager extends ViewPager {
 	
 	private boolean isPagingEnabled;
 	private boolean isBezelGesture;
+//	private boolean isClickOnTabStrip;
+	
 	private float leftBezelZone;
 	private float rightBezelZone;
+//	private float topStripZone;
 	
 	public AntrackViewPager(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		this.isPagingEnabled = true;
 		this.isBezelGesture = false;
+//		this.isClickOnTabStrip = false;
 	}
 	
 	@Override
@@ -32,21 +36,22 @@ public class AntrackViewPager extends ViewPager {
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {
 		float x = event.getX();
+//		float y = event.getY();
 		Log.e("my view pager", "onInterceptTouchEvent");
+//		this.isClickOnTabStrip = isClickOnTabStrip(y);
 		
+		//if paging is enabled or user is clicking on tab strip
+		//let viewpager handle the touch event
+		//otherwise, check for bezel gesture
+		//if non of the above, ignore touch event, let map handle it
+//		if(this.isPagingEnabled || this.isClickOnTabStrip){
 		if(this.isPagingEnabled){
-			Log.e("my view pager", "onInterceptTouchEvent: pager has control, x = " + x);
-			
+			Log.e("my view pager", "onInterceptTouchEvent: paging enabled/clicked on tab strip");
 			return super.onInterceptTouchEvent(event);
 		} else {
-			if(isBezelGesture(x)){
-				isBezelGesture = true;
-			}
-			else{
-				isBezelGesture = false;
-			}
+			this.isBezelGesture = isBezelGesture(x);
+//			Log.i("my view pager", "onInterceptTouchEvent: paging disabled, check for bezel gesture, (x, y)=(" + x + ", " + y + ")");
 		} 
-		Log.i("my view pager", "onInterceptTouchEvent: map has control");
 		return true;
 	}
 	
@@ -60,6 +65,18 @@ public class AntrackViewPager extends ViewPager {
 		}
 		return false;
 	}
+	
+//	private boolean isClickOnTabStrip(float y){
+//		if(y < topStripZone){
+//			return true;
+//		}
+//		return false;
+//	}
+	
+//	public void setHeight(float height){
+//		this.topStripZone = height * 0.05f;
+//		Log.e("my view pager", "height= " + height + ", top= " + topStripZone);
+//	}
 	
 	public void setWidth(float width){
 		this.leftBezelZone = width * 0.05f;

@@ -7,8 +7,12 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.telephony.TelephonyManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -138,6 +142,7 @@ public class Tutorial extends Activity {
 	}
 	
 	private void setSetupPageContent() {
+		
 		Button previous = (Button) findViewById(R.id.previous);
 		previous.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -147,22 +152,49 @@ public class Tutorial extends Activity {
 		});
 		
 		final EditText et = (EditText) findViewById(R.id.nameinput);
+		final CheckBox cb = (CheckBox) findViewById(R.id.legal);
+		final Button next = (Button) findViewById(R.id.next);
+		next.setEnabled(false);
 		
-		Button next = (Button) findViewById(R.id.next);
+		et.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				if(s.length() > 0 && cb.isChecked()){
+					next.setEnabled(true);
+				} else{
+					next.setEnabled(false);
+				}
+			}
+			
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+			}
+			
+			@Override
+			public void afterTextChanged(Editable s) {
+			}
+		});
+		
+		cb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				if(isChecked && (et.getEditableText().length() > 0)){
+					next.setEnabled(true);
+				} else{
+					next.setEnabled(false);
+				}
+			}
+		});
+		
 		next.setText("Done!");
 		next.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				String name = et.getEditableText().toString();
-//				if (name.isEmpty()) {
-				if (name.length() < 1) {
-					et.setError("please enter a name");
-				} else {
-					Toast.makeText(Tutorial.this, "Hi! " + name, Toast.LENGTH_SHORT).show();
-					saveNameToSharedPreference(name);
-					generateUserid();
-					finishThisAndGoToMapActivity();
-				}
+				Toast.makeText(Tutorial.this, "Hi! " + name, Toast.LENGTH_SHORT).show();
+				saveNameToSharedPreference(name);
+				generateUniqueId();
+				finishThisAndGoToMapActivity();
 			}
 		});
 	}
@@ -171,17 +203,14 @@ public class Tutorial extends Activity {
 		pref.edit().putBoolean("firsttime", false).putString("name", name).commit();
 	}
 	
-	private void generateUserid(){
-		TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-		String imei = telephonyManager.getDeviceId();
-		String prehash = imei + String.valueOf(System.currentTimeMillis());
-		String userid = Utility.getMD5(prehash);
-		pref.edit().putString("userid", userid).commit();
-		Toast.makeText(Tutorial.this, "userid=" + userid, Toast.LENGTH_LONG).show();
+	private void generateUniqueId(){
+		String uuid = Installation.id(Tutorial.this);
+		Utility.log("uuid=" + uuid);
+		pref.edit().putString("uuid", uuid).commit();
 	}
 	
 	private void finishThisAndGoToMapActivity(){
-		startActivity(new Intent(Tutorial.this, MainActivity.class));
+		startActivity(new Intent(Tutorial.this, AntrackMapActivity.class));
 		finish();
 	}
 }

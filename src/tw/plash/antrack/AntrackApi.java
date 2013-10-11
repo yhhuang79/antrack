@@ -26,11 +26,19 @@ public class AntrackApi {
 		mResutstQueue = queue;
 	}
 	
+	public Request<?> initialize(String uuid, String username, String timestamp, Listener<JSONObject> listener, ErrorListener errorListener){
+		String param = "?action=initialize&uuid=" + uuid + "&username=" + Utility.encode(username) + "&timestamp=" + Utility.encode(timestamp);
+		String url = baseUrl + param; //make sure there's no whitespace or anything weird
+		return mResutstQueue.add(new JsonObjectRequest(Method.GET, url, null, listener, errorListener));
+	}
+	
+	/*
 	public Request<?> initialize(String userid, String username, String timestamp, Listener<JSONObject> listener, ErrorListener errorListener){
 		String param = "?action=initialize&userid=" + Utility.encode(userid) + "&username=" + Utility.encode(username) + "&timestamp=" + Utility.encode(timestamp);
 		String url = baseUrl + param; //make sure there's no whitespace or anything weird
 		return mResutstQueue.add(new JsonObjectRequest(Method.GET, url, null, listener, errorListener));
 	}
+	*/
 	
 	public Request<?> upload(String token, Location location, boolean toDisplay, Listener<JSONObject> listener, ErrorListener errorListener) throws JSONException{
 		String url = baseUrl;

@@ -5,13 +5,13 @@ import com.android.volley.toolbox.Volley;
 
 import android.content.Context;
 
-public class AntrackSingleton {
+public class AntrackApp {
 	
-	private static AntrackSingleton instance;
+	private static AntrackApp instance;
 	
 	private AntrackApi mApi;
 	
-	private AntrackSingleton(Context context) {
+	private AntrackApp(Context context) {
 		
 		RequestQueue queue = Volley.newRequestQueue(context);
 		mApi = new AntrackApi(queue);
@@ -22,9 +22,9 @@ public class AntrackSingleton {
 		return mApi;
 	}
 	
-	public static synchronized AntrackSingleton getInstance(Context context){
+	public static synchronized AntrackApp getInstance(Context context){
 		if(instance == null){
-			instance = new AntrackSingleton(context.getApplicationContext());
+			instance = new AntrackApp(context.getApplicationContext());
 		}
 		return instance;
 	}

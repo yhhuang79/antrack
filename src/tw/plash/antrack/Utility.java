@@ -28,6 +28,9 @@ import android.content.Context;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.telephony.TelephonyManager;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
@@ -250,5 +253,13 @@ public class Utility {
 		}
 //		Log.e("correct url encoder", "outParam=" + output);
 		return output;
+	}
+	
+	public static void log(String name, String msg){
+		Log.d("tw.plash.antrack." + name, msg);
+	}
+	
+	public static void log(String msg){
+		log("", msg);
 	}
 }
