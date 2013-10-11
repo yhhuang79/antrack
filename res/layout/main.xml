@@ -8,46 +8,50 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/footer"/>
+        android:layout_above="@+id/footer"/> <!-- this is really stupid -->
 
     <tw.plash.antrack.AntrackViewPager
         android:id="@+id/pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" 
-        android:layout_above="@+id/footer">
-
-        <android.support.v4.view.PagerTitleStrip
-            android:id="@+id/pager_title_strip"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/footer" >
+<!-- 
+        <android.support.v4.view.PagerTabStrip
+            android:id="@+id/pager_tab_strip"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="32dip" 
             android:layout_gravity="top"
-            android:background="#33b5e5"
+            android:background="@color/light_light_blue"
             android:paddingBottom="4dp"
             android:paddingTop="4dp"
-            android:textColor="#fff" />
+            android:textColor="#fff"/>
+         this is really stupid too-->
     </tw.plash.antrack.AntrackViewPager>
-	
-    <LinearLayout 
+
+    <LinearLayout
         android:id="@+id/footer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/light_light_blue"
         android:orientation="horizontal"
         android:weightSum="1.0"
-        android:layout_alignParentBottom="true"
-        android:padding="5dip"
-        android:background="#aa000000">
-        
-        <Button 
+        android:padding="5dip">
+
+        <Button
+            android:id="@+id/controlbutton"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
-            android:text="BUTTON 1"
-            android:layout_weight="0.5"/>
-        
-        <Button 
+            android:layout_weight="0.5"
+            android:layout_margin="5dip"
+            android:text="BUTTON 1" />
+
+        <Button
             android:layout_width="0dip"
             android:layout_height="wrap_content"
-            android:text="BUTTON 2"
-            android:layout_weight="0.5"/>
+            android:layout_weight="0.5"
+            android:layout_margin="5dip"
+            android:text="BUTTON 2" />
     </LinearLayout>
-    
+
 </RelativeLayout>

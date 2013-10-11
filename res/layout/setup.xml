@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent" >
 
-    <TextView 
+    <TextView
         android:id="@+id/textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
         android:text="SETUP"
-        android:textSize="36sp"
-        android:layout_centerInParent="true"/>
-    
-    <EditText 
+        android:textSize="36sp" />
+
+    <EditText
         android:id="@+id/nameinput"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:hint="what\'s your name\?"
-        android:layout_below="@+id/textview"/>
+        android:layout_below="@+id/textview"
+        android:hint="what\&apos;s your name\?" />
 
-    <include 
-        layout="@layout/footer" />
+    <CheckBox
+        android:id="@+id/legal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/nameinput"
+        android:text="you agree to our legal stuff" />
+
+    <include layout="@layout/footer" />
 
 </RelativeLayout>

@@ -4,7 +4,7 @@
     <string name="errormsg_internet_not_available">Error\! Check your internet connection and try again later</string>
     <string name="errormsg_google_play_service_unavailable">Error\! Check your Google Play Service settings and try again later</string>
     <string name="errormsg_server_error">Error! AnTrack service is unavailable now please try again later</string>
-    <string name="control_button_stop">STOP sharing my location</string>
-    <string name="control_button_start">START sharing my location</string>
+    <string name="control_button_stop">STOP sharing</string>
+    <string name="control_button_start">START sharing</string>
 
 </resources>

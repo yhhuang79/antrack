@@ -3,8 +3,37 @@
 
     <color name="light_light_blue">#7CD4F3</color>
     <color name="dark_light_blue">#7CEFF3</color>
-    
     <color name="light_purple">#D68FF7</color>
     <color name="purple">#AA00FF</color>
     <color name="dark_purple">#6F3CBD</color>
+    
+    <color name="light_light_blue_bg">#997CD4F3</color>
+    <color name="dark_light_blue_bg">#997CEFF3</color>
+    <color name="light_purple_bg">#99D68FF7</color>
+    <color name="purple_bg">#99AA00FF</color>
+    <color name="dark_purple_bg">#996F3CBD</color>
+
+    <!-- percentage to hex
+    	100% — FF
+		95% — F2
+		90% — E6
+		85% — D9
+		80% — CC
+		75% — BF
+		70% — B3
+		65% — A6
+		60% — 99
+		55% — 8C
+		50% — 80
+		45% — 73
+		40% — 66
+		35% — 59
+		30% — 4D
+		25% — 40
+		20% — 33
+		15% — 26
+		10% — 1A
+		5% — 0D
+		0% — 00    -->
+
 </resources>
