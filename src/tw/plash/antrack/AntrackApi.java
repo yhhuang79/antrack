@@ -1,8 +1,6 @@
 package tw.plash.antrack;
 
 import java.sql.Timestamp;
-import java.util.Iterator;
-import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONException;

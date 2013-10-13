@@ -17,6 +17,8 @@ import android.view.ViewGroup;
 
 public class StatsFragment extends Fragment {
 	
+	private final String simpleName = "StatsFragment";
+	
 	private Messenger mSender = null;
 	private boolean mIsBound;
 	private final Messenger mReceiver = new Messenger(new ImcomingHandler());
@@ -26,6 +28,12 @@ public class StatsFragment extends Fragment {
 		public void handleMessage(Message msg) {
 			switch(msg.what){
 			//other cases
+			case IPCMessages.UPDATE_STATS:
+				//just parse the stats object and show it
+				break;
+			case IPCMessages.UPDATE_STATS_SUMMARY:
+				//show average stats
+				break;
 			default:
 				super.handleMessage(msg);
 			}
@@ -35,14 +43,10 @@ public class StatsFragment extends Fragment {
 	private ServiceConnection mConnection = new ServiceConnection() {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
+			Utility.log(simpleName, "serviceocnnection: binded");
 			mSender = new Messenger(service);
-			Message msg = Message.obtain(null, IPCMessages.REGISTER, IPCMessages.STATS_FRAGMENT, 0);
-			msg.replyTo = mReceiver;
-			try {
-				mSender.send(msg);
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
+			Utility.log(simpleName, "serviceocnnection: now registering");
+			sendMessageToService(IPCMessages.REGISTER, false);
 		}
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
@@ -50,46 +54,49 @@ public class StatsFragment extends Fragment {
 		}
 	};
 	
-	private void sendMessageToService(int what){
-		if(mIsBound){
-			if(mSender != null){
+	private void sendMessageToService(int what, boolean safetyCheck) {
+		if (!safetyCheck || canSendMessageNow()) {
+			try {
 				Message msg = Message.obtain(null, what, IPCMessages.STATS_FRAGMENT, 0);
 				msg.replyTo = mReceiver;
-				try {
-					mSender.send(msg);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
+				mSender.send(msg);
+			} catch (RemoteException e) {
+				e.printStackTrace();
 			}
 		}
+	}
+	
+	private boolean canSendMessageNow() {
+		if (mIsBound) {
+			if (mSender != null) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootview = inflater.inflate(R.layout.stats, container, false);
-		Log.w("ANTRACK", "Stats: onCraeteView");
 		return rootview;
 	}
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		
-//		setHasOptionsMenu(true);
-		Log.w("ANTRACK", "Stats: onActivityCreated");
-//		getLoaderManager().initLoader(0, null, this);
 	}
 	
 	@Override
 	public void onResume() {
 		super.onResume();
-		Log.w("ANTRACK", "Stats: onResume");
-		//bind to service
+		Utility.log(simpleName, "onresume");
 		bindToService();
 	}
 	
 	private void bindToService(){
+		Utility.log(simpleName, "bindToService: check if necessary");
 		if(!mIsBound){
+			Utility.log(simpleName, "bindToService: actual binding");
 			getActivity().bindService(new Intent(getActivity(), AntrackService.class), mConnection, getActivity().BIND_AUTO_CREATE);
 			mIsBound = true;
 		}
@@ -98,22 +105,17 @@ public class StatsFragment extends Fragment {
 	@Override
 	public void onPause() {
 		super.onPause();
-		Log.w("ANTRACK", "Stats: onPause");
+		Utility.log(simpleName, "onPause");
 		//unbind from service
-		
+		unbindFromService();
 	}
 	
 	private void unbindFromService(){
+		Utility.log(simpleName, "unbindFromService");
 		if(mIsBound){
-			if(mSender != null){
-				Message msg = Message.obtain(null, IPCMessages.DEREGISTER, IPCMessages.STATS_FRAGMENT, 0);
-				msg.replyTo = mReceiver;
-				try {
-					mSender.send(msg);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
+			Utility.log(simpleName, "unbindFromService: deregister");
+			sendMessageToService(IPCMessages.DEREGISTER, true);
+			Utility.log(simpleName, "unbindFromService: unbind");
 			getActivity().unbindService(mConnection);
 			mIsBound = false;
 		}

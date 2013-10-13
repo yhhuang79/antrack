@@ -26,10 +26,10 @@ public class AntrackViewPager extends ViewPager {
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if(this.isPagingEnabled || this.isBezelGesture){
-			Log.w("my view pager", "onTouchEvent: pager has control");
+//			Log.w("my view pager", "onTouchEvent: pager has control");
 			return super.onTouchEvent(event);
 		}
-		Log.d("my view pager", "onTouchEvent: map has control");
+//		Log.d("my view pager", "onTouchEvent: map has control");
 		return false;
 	}
 	
@@ -37,7 +37,7 @@ public class AntrackViewPager extends ViewPager {
 	public boolean onInterceptTouchEvent(MotionEvent event) {
 		float x = event.getX();
 //		float y = event.getY();
-		Log.e("my view pager", "onInterceptTouchEvent");
+//		Log.e("my view pager", "onInterceptTouchEvent");
 //		this.isClickOnTabStrip = isClickOnTabStrip(y);
 		
 		//if paging is enabled or user is clicking on tab strip
@@ -46,7 +46,7 @@ public class AntrackViewPager extends ViewPager {
 		//if non of the above, ignore touch event, let map handle it
 //		if(this.isPagingEnabled || this.isClickOnTabStrip){
 		if(this.isPagingEnabled){
-			Log.e("my view pager", "onInterceptTouchEvent: paging enabled/clicked on tab strip");
+//			Log.e("my view pager", "onInterceptTouchEvent: paging enabled/clicked on tab strip");
 			return super.onInterceptTouchEvent(event);
 		} else {
 			this.isBezelGesture = isBezelGesture(x);
@@ -81,6 +81,6 @@ public class AntrackViewPager extends ViewPager {
 	public void setWidth(float width){
 		this.leftBezelZone = width * 0.05f;
 		this.rightBezelZone = width * 0.95f;
-		Log.e("my view pager", "width= " + width + ", left= " + leftBezelZone + ", right= " + rightBezelZone);
+//		Log.e("my view pager", "width= " + width + ", left= " + leftBezelZone + ", right= " + rightBezelZone);
 	}
 }

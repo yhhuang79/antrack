@@ -32,7 +32,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	private final String simpleName = "AntrackService";
 	
-	private static boolean serviceIsRunning = false;
+//	private static boolean serviceIsRunning = false;
 	private static boolean serviceIsSharing = false;
 	
 	private LocationClient locationClient;
@@ -53,9 +53,10 @@ public class AntrackService extends Service implements LocationListener, Connect
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case IPCMessages.REGISTER:
-				Log.d("Locator.handleMessage", "ACTIVITY_REGISTER");
+				Utility.log(simpleName, "handle msg: register");
 				switch(msg.arg1){
 				case IPCMessages.MAP_ACTIVITY:
+					Utility.log(simpleName, "handle msg: register: map");
 					mLocationSender = msg.replyTo;
 					if (isSharingLocation()) {
 						//sync trajectory
@@ -63,6 +64,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 					}
 					break;
 				case IPCMessages.STATS_FRAGMENT:
+					Utility.log(simpleName, "handle msg: register: stats");
 					mStatsSender = msg.replyTo;
 					if(isSharingLocation()){
 						syncStats();
@@ -71,22 +73,25 @@ public class AntrackService extends Service implements LocationListener, Connect
 				}
 				break;
 			case IPCMessages.DEREGISTER:
-				Log.d("Locator.handleMessage", "ACTIVITY_DEREGISTER");
+				Utility.log(simpleName, "handle msg: deregister");
 				if (msg.replyTo == mLocationSender) {
+					Utility.log(simpleName, "handle msg: deregister: map");
 					mLocationSender = null;
 				} else if(msg.replyTo == mStatsSender) {
+					Utility.log(simpleName, "handle msg: deregister: stats");
 					mStatsSender = null;
 				}
 				break;
 			case IPCMessages.START_SHARING:
-				Utility.log(simpleName, "start sharing");
+				Utility.log(simpleName, "handle msg: start sharing");
 				prepareToStartSharing();
 				break;
 			case IPCMessages.STOP_SHARING:
-				Utility.log(simpleName, "stop sharing");
+				Utility.log(simpleName, "handle msg: stop sharing");
 				prepareToStopSharing();
 				break;
 			default:
+				Utility.log(simpleName, "handle msg: default");
 				super.handleMessage(msg);
 			}
 		}
@@ -137,15 +142,17 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	synchronized private void sendMessageToMapActivity(int what, Object data) {
+		Utility.log(simpleName, "sendMessageToMapActivity");
 		if (mLocationSender != null) {
 			try {
+				Utility.log(simpleName, "sendMessageToMapActivity: message sent");
 				Message msg = Message.obtain(null, what, data);
 				mLocationSender.send(msg);
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}
 		} else {
-			Log.w("Locator", "null outgoingMessenger");
+			Utility.log(simpleName, "sendMessageToMapActivity: sender is null");
 		}
 	}
 	
@@ -173,11 +180,12 @@ public class AntrackService extends Service implements LocationListener, Connect
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		Utility.log(simpleName, "onCreate: begin");
 		
 		setupLocationRequest();
 		setupLocationClient();
 		
-		serviceIsRunning = true;
+//		serviceIsRunning = true;
 		serviceIsSharing = false;
 		
 		preference = PreferenceManager.getDefaultSharedPreferences(AntrackService.this);
@@ -185,6 +193,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 		stats = new TripStatictics();
 		
 		dbhelper = new DBHelper(AntrackService.this);
+		Utility.log(simpleName, "onCreate: done");
 	}
 	
 	private void setupLocationRequest() {
@@ -204,9 +213,9 @@ public class AntrackService extends Service implements LocationListener, Connect
 		return mReceiver.getBinder();
 	}
 	
-	public static boolean isRunning(){
-		return serviceIsRunning;
-	}
+//	public static boolean isRunning(){
+//		return serviceIsRunning;
+//	}
 	
 	public static boolean isSharingLocation() {
 		return serviceIsSharing;
@@ -216,7 +225,9 @@ public class AntrackService extends Service implements LocationListener, Connect
 	public void onDestroy() {
 		super.onDestroy();
 		
-		serviceIsRunning = false;
+		Utility.log(simpleName, "onDestroy: init");
+		
+//		serviceIsRunning = false;
 		serviceIsSharing = false;
 		
 		stats = null;
@@ -226,23 +237,25 @@ public class AntrackService extends Service implements LocationListener, Connect
 		
 		locationClient.removeLocationUpdates(AntrackService.this);
 		locationClient.disconnect();
+		
+		Utility.log(simpleName, "onDestroy: done");
 	}
 	
 	@Override
 	public void onConnectionFailed(ConnectionResult connectionResult) {
-		Log.e("Locator", "onConnectionFailed");
+		Utility.log(simpleName, "onConnectionFailed");
 		//send error to activity
 	}
 	
 	@Override
 	public void onConnected(Bundle bundle) {
-		Log.e("Locator", "onConnected");
+		Utility.log(simpleName, "onConnected");
 		locationClient.requestLocationUpdates(locationRequest, AntrackService.this);
 	}
 	
 	@Override
 	public void onDisconnected() {
-		Log.e("Locator", "onDisconnected");
+		Utility.log(simpleName, "onDisconnected");
 	}
 	
 	@Override
@@ -252,10 +265,12 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private void handleNewLocation(Location location) {
+		Utility.log(simpleName, "handleNewLocation");
 		//1. check validity of location
 		boolean toDisplay = shouldDisplayThisLocation(location);
 		//2. sharing or not, send location to activity if valid
 		if(toDisplay){
+			Utility.log(simpleName, "handleNewLocation: sending location");
 			sendLocationMessage(location);
 		}
 		//3. if sharing, save to db, upload, do stats
@@ -272,6 +287,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private boolean shouldDisplayThisLocation(Location location) {
+		Utility.log(simpleName, "shouldDisplayThisLocation");
 		boolean result = false;
 		if (Utility.isValidLocation(location)) {
 			if ((previousLocation == null) || !Utility.isWithinAccuracyBound(previousLocation, location)) {

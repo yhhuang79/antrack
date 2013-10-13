@@ -1,7 +1,8 @@
 package tw.plash.antrack;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import org.json.JSONObject;
 
 import android.app.AlertDialog;
 import android.content.ComponentName;
@@ -29,6 +30,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.android.volley.Response.ErrorListener;
+import com.android.volley.Response.Listener;
+import com.android.volley.VolleyError;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.GoogleMap;
@@ -37,6 +41,8 @@ import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
 import com.google.android.gms.maps.SupportMapFragment;
 
 public class AntrackMapActivity extends ActionBarActivity implements TabListener {
+	
+	private final String simpleName = "AntrackMapActivity";
 	
 	private tw.plash.antrack.AntrackViewPager myViewPager;
 	private PagerAdapter pagerAdapter;
@@ -52,7 +58,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	private boolean mIsBound;
 	private final Messenger mReceiver = new Messenger(new IncomingHandler());
 	
-	class IncomingHandler extends Handler {
+	private class IncomingHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
@@ -84,7 +90,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	
 	private ServiceConnection mConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
+			Utility.log(simpleName, "serviceocnnection: binded");
 			mSender = new Messenger(service);
+			Utility.log(simpleName, "serviceocnnection: now registering");
 			sendMessageToService(IPCMessages.REGISTER, false);
 		}
 		
@@ -177,13 +185,14 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		// myViewPager.setCurrentItem(1); // XXX
 		
 		setupControlButton();
+		
 	}
 	
 	private void setupGooglemap() {
 		switch (GooglePlayServicesUtil.isGooglePlayServicesAvailable(AntrackMapActivity.this)) {
 		case ConnectionResult.SUCCESS:
 			googlemap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
-			googlemap.setMyLocationEnabled(true);
+			googlemap.setMyLocationEnabled(true); 
 			googlemap.getUiSettings().setMyLocationButtonEnabled(false);
 			googlemap.getUiSettings().setZoomGesturesEnabled(true);
 			googlemap.getUiSettings().setZoomControlsEnabled(false);
@@ -202,6 +211,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			// XXX setup map drawer
 			mapDrawer = new MapDrawer(googlemap);
 			break;
+		default:
+			//XXX well...no map, no sharing
+			break;
 		}
 	}
 	
@@ -216,9 +228,15 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			@Override
 			public void onClick(View v) {
 				if (AntrackService.isSharingLocation()) {
-					showConfirmStopSharingDialog();
+//					showConfirmStopSharingDialog();
+					//stop sharing
+					sendMessageToService(IPCMessages.STOP_SHARING, true);
+					stopService(new Intent(AntrackMapActivity.this, AntrackService.class));
 				} else {
-					prepareToStartSharing();
+//					prepareToStartSharing();
+					//start sharing
+					startService(new Intent(AntrackMapActivity.this, AntrackService.class));
+					sendMessageToService(IPCMessages.START_SHARING, true);
 				}
 			}
 		});
@@ -257,44 +275,59 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	
 	private void setupStartSharingConnection() {
 		// new InitializeConnection(Map.this, preference).execute();
-		AntrackApp.getInstance(AntrackMapActivity.this).getApi().stop("", "", null, null);
+		AntrackApp.getInstance(AntrackMapActivity.this).getApi().initialize("", "", "", 
+			new Listener<JSONObject>() {
+			@Override
+			public void onResponse(JSONObject obj) {
+				//parse the jsonobject returned from server
+			}
+		}, new ErrorListener() {
+			@Override
+			public void onErrorResponse(VolleyError arg0) {
+				//let user know there is a error, try again later
+			}
+		});
 	}
 	
 	@Override
 	protected void onResume() {
 		super.onResume();
-		startService();
-		checkIfServiceIsRunning();
+		Utility.log(simpleName, "onresume");
+//		startService();
+//		checkIfServiceIsRunning();
+		bindToService();
 	}
 	
 	private void startService() {
-		Log.e("map.onresume", "lets start the service");
+		Utility.log(simpleName, "onresume: startservice");
 		startService(new Intent(AntrackMapActivity.this, AntrackService.class));
-	}
-	
-	private void checkIfServiceIsRunning() {
-		if (AntrackService.isRunning()) {
-			bindToService();
-		}
 	}
 	
 	void bindToService() {
 		// bind only when necessary
-		bindService(new Intent(AntrackMapActivity.this, AntrackService.class), mConnection, Context.BIND_AUTO_CREATE);
-		mIsBound = true;
+		Utility.log(simpleName, "bindToService: check if necessary");
+		if(!mIsBound){
+			Utility.log(simpleName, "bindToService: actual binding");
+			bindService(new Intent(AntrackMapActivity.this, AntrackService.class), mConnection, Context.BIND_AUTO_CREATE);
+			mIsBound = true;
+		}
 	}
 	
 	@Override
 	protected void onPause() {
 		super.onPause();
+		Utility.log(simpleName, "onPause");
 		unbindFromService();
-		stopServiceIfNotSharing();
+//		stopServiceIfNotSharing();
 	}
 	
 	void unbindFromService() {
+		Utility.log(simpleName, "unbindFromService");
 		if (mIsBound) {
+			Utility.log(simpleName, "unbindFromService: deregister");
 			sendMessageToService(IPCMessages.DEREGISTER, true);
 			// Detach our existing connection.
+			Utility.log(simpleName, "unbindFromService: unbind");
 			unbindService(mConnection);
 			mIsBound = false;
 		}
