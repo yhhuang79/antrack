@@ -13,13 +13,13 @@ public class PagerAdapter extends FragmentPagerAdapter {
 	@Override
 	public Fragment getItem(int position) {
 		switch(position){
-		case 0: //friends' trips
-			return new StatsFragment(); //XXX
-		case 2: //public trips
-			return new PhotoFragment(); //XXX
-		case 1: //my trips
-		default: //not sure when will this happen
-			return new DummyFragment();
+		case 0:
+			return new StatsFragment();
+		case 2:
+			return new PhotoFragment();
+		case 1:
+		default:
+			return new Fragment();
 		}
 	}
 	
@@ -37,7 +37,7 @@ public class PagerAdapter extends FragmentPagerAdapter {
 			return "Photos";
 		case 1:
 		default:
-			return "Dummy";
+			return "Map";
 		}
 	}
 }

@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.os.Bundle;
@@ -18,6 +19,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
@@ -36,11 +38,12 @@ import com.android.volley.VolleyError;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnMyLocationChangeListener;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
 import com.google.android.gms.maps.SupportMapFragment;
 
-public class AntrackMapActivity extends ActionBarActivity implements TabListener {
+public class AntrackMapActivity extends ActionBarActivity implements TabListener, FixLocationCallback {
 	
 	private final String simpleName = "AntrackMapActivity";
 	
@@ -48,7 +51,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	private PagerAdapter pagerAdapter;
 	
 	private GoogleMap googlemap;
-	private MapDrawer mapDrawer;
+	private MapController mapController;
+	private boolean fixToLocation;
+	private SharedPreferences preference;
 	
 	private Button controlButton;
 	
@@ -73,7 +78,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 				Location location = (Location) msg.obj;
 				onLocationChangedListener.onLocationChanged(location);
 				if (AntrackService.isSharingLocation()) {
-					mapDrawer.addLocation(location);
+					mapController.addLocation(location);
 				}
 			}
 				break;
@@ -84,8 +89,8 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	}
 	
 	private void clearMapAndDrawSyncedTrajectory(List<Location> locations) {
-		mapDrawer.clearMap();
-		mapDrawer.drawLocations(locations);
+		mapController.clearMap();
+		mapController.drawLocations(locations);
 	}
 	
 	private ServiceConnection mConnection = new ServiceConnection() {
@@ -133,6 +138,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		super.onCreate(savedInstanceState);
 		
 		setContentView(R.layout.main);
+		
+		preference = PreferenceManager.getDefaultSharedPreferences(AntrackMapActivity.this);
+		getPreferences();
 		
 		final ActionBar actionBar = getSupportActionBar();
 		
@@ -208,8 +216,16 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 					onLocationChangedListener = null;
 				}
 			});
+			googlemap.setOnMyLocationChangeListener(new OnMyLocationChangeListener() {
+				@Override
+				public void onMyLocationChange(Location location) {
+					if(fixToLocation){
+						mapController.moveToLocation(location);
+					}
+				}
+			});
 			// XXX setup map drawer
-			mapDrawer = new MapDrawer(googlemap);
+			mapController = new MapController(googlemap);
 			break;
 		default:
 			//XXX well...no map, no sharing
@@ -228,39 +244,39 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			@Override
 			public void onClick(View v) {
 				if (AntrackService.isSharingLocation()) {
-//					showConfirmStopSharingDialog();
 					//stop sharing
-					sendMessageToService(IPCMessages.STOP_SHARING, true);
-					stopService(new Intent(AntrackMapActivity.this, AntrackService.class));
+					showConfirmStopSharingDialog();
 				} else {
-//					prepareToStartSharing();
 					//start sharing
-					startService(new Intent(AntrackMapActivity.this, AntrackService.class));
-					sendMessageToService(IPCMessages.START_SHARING, true);
+					prepareToStartSharing();
 				}
 			}
 		});
 	}
 	
 	private void showConfirmStopSharingDialog() {
-		new AlertDialog.Builder(AntrackMapActivity.this).setMessage("are you sure you want to stop sharing?")
-				.setPositiveButton("yes", new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						prepareToStopSharing();
-					}
-				}).setNegativeButton("no", new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						Toast.makeText(AntrackMapActivity.this, "sharing CONTINUES", Toast.LENGTH_SHORT).show();
-					}
-				}).show();
+		new AlertDialog.Builder(AntrackMapActivity.this)
+			.setMessage("are you sure you want to stop sharing?")
+			.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					prepareToStopSharing();
+				}
+			}).setNegativeButton("no", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					Toast.makeText(AntrackMapActivity.this, "sharing CONTINUES", Toast.LENGTH_SHORT).show();
+				}
+			}).show();
 	}
 	
 	private void prepareToStopSharing() {
-		Toast.makeText(AntrackMapActivity.this, "sharing is STOPPED", Toast.LENGTH_SHORT).show();
+		mapController.drawEndMarker();
+		sendMessageToService(IPCMessages.STOP_SHARING, true);
+		stopService(new Intent(AntrackMapActivity.this, AntrackService.class));
+		Toast.makeText(AntrackMapActivity.this, "STOPPED sharing", Toast.LENGTH_SHORT).show();
 		controlButton.setText(R.string.control_button_start);
-		executeStopSharingConnection();
+//		executeStopSharingConnection();
 	}
 	
 	private void executeStopSharingConnection() {
@@ -269,8 +285,12 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	}
 	
 	private void prepareToStartSharing() {
-		mapDrawer.clearMap();
-		setupStartSharingConnection();
+		mapController.clearMap();
+		controlButton.setText(R.string.control_button_stop);
+		Toast.makeText(AntrackMapActivity.this, "START sharing", Toast.LENGTH_SHORT).show();
+		startService(new Intent(AntrackMapActivity.this, AntrackService.class));
+		sendMessageToService(IPCMessages.START_SHARING, true);
+//		setupStartSharingConnection();
 	}
 	
 	private void setupStartSharingConnection() {
@@ -280,6 +300,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			@Override
 			public void onResponse(JSONObject obj) {
 				//parse the jsonobject returned from server
+				//init share action intent
 			}
 		}, new ErrorListener() {
 			@Override
@@ -293,9 +314,15 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	protected void onResume() {
 		super.onResume();
 		Utility.log(simpleName, "onresume");
+		//retrieve shared preference
+		getPreferences();
 //		startService();
 //		checkIfServiceIsRunning();
 		bindToService();
+	}
+	
+	private void getPreferences(){
+		fixToLocation = preference.getBoolean(Constants.PREF_FIXTOLOCATION, true);
 	}
 	
 	private void startService() {
@@ -318,7 +345,8 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		super.onPause();
 		Utility.log(simpleName, "onPause");
 		unbindFromService();
-//		stopServiceIfNotSharing();
+		//save shared preference
+		savePreferences();
 	}
 	
 	void unbindFromService() {
@@ -333,12 +361,8 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		}
 	}
 	
-	private void stopServiceIfNotSharing() {
-		Log.e("map.onpause", "stop service if neccessary");
-		if (!AntrackService.isSharingLocation()) {
-			Log.e("map.onpause", "lets stop the service");
-			stopService(new Intent(AntrackMapActivity.this, AntrackService.class));
-		}
+	private void savePreferences(){
+		preference.edit().putBoolean(Constants.PREF_FIXTOLOCATION, fixToLocation).commit();
 	}
 	
 	@Override
@@ -352,5 +376,17 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	
 	@Override
 	public void onTabUnselected(Tab arg0, FragmentTransaction arg1) {
+	}
+
+	@Override
+	public void enableFix() {
+		// TODO Auto-generated method stub
+		fixToLocation = true;
+	}
+
+	@Override
+	public void disableFix() {
+		// TODO Auto-generated method stub
+		fixToLocation = false;
 	}
 }

@@ -13,18 +13,19 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-public class MapDrawer {
+public class MapController {
 	
 	private final GoogleMap gmap;
 	private Polyline trajectory;
 	
-	public MapDrawer(GoogleMap gmap) {
+	public MapController(GoogleMap gmap) {
 		this.gmap = gmap;
 		this.trajectory = null;
 	}
 	
 	public void clearMap(){
-		gmap.clear();
+		this.gmap.clear();
+		this.trajectory = null;
 	}
 	
 	synchronized public void addLocation(Location location){
@@ -58,5 +59,19 @@ public class MapDrawer {
 		gmap.addMarker(new MarkerOptions().position(firstPoint).title("Start"));
 		//zoom out to show entire trajectory
 		gmap.animateCamera(CameraUpdateFactory.newLatLngBounds(boundBuilder.build(), 5));
+	}
+	
+	synchronized public void moveToLocation(Location location){
+		gmap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(location.getLatitude(), location.getLongitude())));
+	}
+	
+	synchronized public void drawEndMarker(){
+		List<LatLng> points = trajectory.getPoints();
+		LatLng lastPoint = points.get(points.size() - 1);
+		gmap.addMarker(new MarkerOptions().position(lastPoint).title("End"));
+	}
+	
+	synchronized public void addPicture(String pathToThumbnail){
+		
 	}
 }
