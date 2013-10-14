@@ -8,14 +8,29 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/footer"/> <!-- this is really stupid -->
+        android:layout_above="@+id/footer" />
+
+    <ImageButton
+        android:id="@+id/fixlocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="20dip"
+        android:layout_marginTop="15dip"
+        android:background="@color/button_state"
+        android:padding="3dip"
+        android:scaleType="fitCenter"
+        android:src="@drawable/device_access_location_found" 
+        android:visibility="gone"/>
 
     <tw.plash.antrack.AntrackViewPager
         android:id="@+id/pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/footer" >
-<!-- 
+
+        <!--
         <android.support.v4.view.PagerTabStrip
             android:id="@+id/pager_tab_strip"
             android:layout_width="match_parent"
@@ -25,7 +40,7 @@
             android:paddingBottom="4dp"
             android:paddingTop="4dp"
             android:textColor="#fff"/>
-         this is really stupid too-->
+        -->
     </tw.plash.antrack.AntrackViewPager>
 
     <LinearLayout
@@ -33,25 +48,32 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@color/light_light_blue"
+        android:background="@drawable/pseudoactionbarbg"
         android:orientation="horizontal"
-        android:weightSum="1.0"
-        android:padding="5dip">
+        android:padding="3dip"
+        android:weightSum="1.0" >
 
         <Button
             android:id="@+id/controlbutton"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
+            android:layout_margin="3dip"
             android:layout_weight="0.5"
-            android:layout_margin="5dip"
             android:text="BUTTON 1" />
 
         <Button
             android:layout_width="0dip"
             android:layout_height="wrap_content"
+            android:layout_margin="3dip"
             android:layout_weight="0.5"
-            android:layout_margin="5dip"
-            android:text="BUTTON 2" />
+            android:text="Take a Picture" 
+            android:enabled="false"/>
     </LinearLayout>
+    
+    <View 
+        android:layout_width="match_parent"
+        android:layout_height="4dip"
+        android:background="@color/light_light_blue"
+        android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>

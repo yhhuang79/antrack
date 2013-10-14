@@ -2,6 +2,16 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent">
-    
+    android:background="@android:color/transparent" >
+
+    <ImageButton
+        android:id="@+id/fixlocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="15dip"
+        android:scaleType="centerInside"
+        android:src="@drawable/device_access_location_found" 
+        android:layout_gravity="top|right"
+        android:background="@color/button_state"/>
+
 </FrameLayout>
