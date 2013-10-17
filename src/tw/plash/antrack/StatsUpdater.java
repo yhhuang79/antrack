@@ -54,7 +54,7 @@ public class StatsUpdater {
 		numberOfPhotos.setText(pref.getString("STATS_PHOTOS", "0"));
 		startTime.setText(pref.getString("STATS_STARTTIME", "00:00:00"));
 		duration.setText(pref.getString("STATS_TIMER_STRING", "00:00"));
-		distance.setText(pref.getString("STATS_DISTANCE", "0 m"));
+		distance.setText(pref.getString("STATS_DISTANCE", "0km"));
 	}
 	
 	public void restoreStats(SharedPreferences pref){
@@ -62,7 +62,7 @@ public class StatsUpdater {
 		startTime.setText(pref.getString("STATS_STARTTIME", "00:00:00"));
 		duration.setBase(pref.getLong("STATS_TIMER", -1L));
 		duration.start();
-		distance.setText(pref.getString("STATS_DISTANCE", "0 m"));
+		distance.setText(pref.getString("STATS_DISTANCE", "0km"));
 	}
 	
 	public void saveStats(SharedPreferences pref){

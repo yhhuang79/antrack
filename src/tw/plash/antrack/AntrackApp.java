@@ -18,16 +18,22 @@ public class AntrackApp {
 	
 	private AntrackApi mApi;
 	private RequestQueue queue;
+	private DBHelper dbhelper;
 	
 	private AntrackApp(Context context) {
 		
 		queue = Volley.newRequestQueue(context, new HurlStack(null, getSSLSocketFactory(), DO_NOT_VERIFY));
 		mApi = new AntrackApi(queue);
+		dbhelper = new DBHelper(context);
 		
 	}
 	
 	public AntrackApi getApi(){
 		return mApi;
+	}
+	
+	public DBHelper getDbhelper(){
+		return dbhelper;
 	}
 	
 	public static synchronized AntrackApp getInstance(Context context){

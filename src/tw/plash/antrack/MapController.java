@@ -3,12 +3,16 @@ package tw.plash.antrack;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
+import android.media.ThumbnailUtils;
+import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -17,23 +21,26 @@ public class MapController {
 	
 	private final GoogleMap gmap;
 	private Polyline trajectory;
+	private LatLng latestLocation;
 	
 	public MapController(GoogleMap gmap) {
 		this.gmap = gmap;
 		this.trajectory = null;
+		this.latestLocation = null;
 	}
 	
 	public void clearMap() {
 		this.gmap.clear();
 		this.trajectory = null;
+		this.latestLocation = null;
 	}
 	
 	synchronized public void addLocation(Location location) {
+		latestLocation = location2LatLng(location);
 		if (trajectory != null) {
 			// already have locations
-			LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
 			List<LatLng> points = trajectory.getPoints();
-			points.add(latlng);
+			points.add(location2LatLng(location));
 			trajectory.setPoints(points);
 		} else {
 			// first time adding locations
@@ -47,19 +54,16 @@ public class MapController {
 		if (locations.isEmpty()) {
 			return;
 		}
-		LatLngBounds.Builder boundBuilder = new LatLngBounds.Builder();
 		PolylineOptions pline = new PolylineOptions();
 		for (Location location : locations) {
-			LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
-			pline.add(latlng);
-			boundBuilder.include(latlng);
+			pline.add(location2LatLng(location));
 		}
 		trajectory = gmap.addPolyline(pline);
-		LatLng firstPoint = trajectory.getPoints().get(0);
-//		gmap.addMarker(new MarkerOptions().position(firstPoint).title("Start"));
+		List<LatLng> points = trajectory.getPoints();
+		LatLng firstPoint = points.get(0);
+		latestLocation = points.get(points.size() - 1);
 		drawMarker(firstPoint, "Start");
-		// zoom out to show entire trajectory
-		gmap.animateCamera(CameraUpdateFactory.newLatLngBounds(boundBuilder.build(), 5));
+		gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(latestLocation, 10));
 	}
 	
 	synchronized public void drawEndMarker() {
@@ -69,20 +73,22 @@ public class MapController {
 			LatLng lastPoint = points.get(points.size() - 1);
 			drawMarker(lastPoint, "End");
 		}
-//		gmap.addMarker(new MarkerOptions().position(lastPoint).title("End"));
 	}
 	
 	private void drawMarker(LatLng position, String title){
 		gmap.addMarker(new MarkerOptions().position(position).title(title));
 	}
 	
-	synchronized public void addPicture(String pathToThumbnail) {
-		
+	synchronized public void addPicture(String imagePath, LatLng location) {
+		Bitmap thumbnail = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(imagePath), 64, 64);
+		gmap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(thumbnail)).position(location));
+		Log.e("tw.plash", "image marker at " + location);
 	}
 	
 	private void animateToLocation(Location location){
-		gmap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(
-				location.getLatitude(), location.getLongitude())));
+		if(location != null){
+			gmap.animateCamera(CameraUpdateFactory.newLatLng(location2LatLng(location)));
+		}
 	}
 	
 	synchronized public void centerAtMyLocation() {
@@ -91,5 +97,13 @@ public class MapController {
 	
 	synchronized public void moveToLocation(Location location){
 		animateToLocation(location);
+	}
+	
+	public LatLng getLatestLocation(){
+		return latestLocation;
+	}
+	
+	private LatLng location2LatLng(Location location){
+		return new LatLng(location.getLatitude(), location.getLongitude());
 	}
 }

@@ -35,7 +35,6 @@ import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -50,7 +49,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationChangeListener;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
-import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
 
 public class AntrackMapActivity extends ActionBarActivity implements TabListener, TouchableWrapperCallback {
 	
@@ -78,13 +77,22 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case IPCMessages.SYNC_CURRENT_TRAJECTORY: {
+				Utility.log("activity", "sync trajectory");
 				List<Location> locations = (List<Location>) msg.obj;
 				if (!locations.isEmpty()) {
 					clearMapAndDrawSyncedTrajectory(locations);
 				}
 			}
 				break;
+			case IPCMessages.SYNC_CURRENT_IMAGE_MARKERS: {
+				List<ImageMarker> imagemarkers = (List<ImageMarker>) msg.obj;
+				if(!imagemarkers.isEmpty()){
+					
+				}
+			}
+				break;
 			case IPCMessages.UPDATE_NEW_LOCATION: {
+				Utility.log("activity", "update new location");
 				Location location = (Location) msg.obj;
 				onLocationChangedListener.onLocationChanged(location);
 				if (AntrackService.isSharingLocation()) {
@@ -101,6 +109,11 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	private void clearMapAndDrawSyncedTrajectory(List<Location> locations) {
 		mapController.clearMap();
 		mapController.drawLocations(locations);
+		//draw image markers
+	}
+	
+	private void drawImageMarkers(){
+		
 	}
 	
 	private ServiceConnection mConnection = new ServiceConnection() {
@@ -289,7 +302,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		
 		camera = (ImageButton) findViewById(R.id.camera);
 		camera.setEnabled(AntrackService.isSharingLocation());
-//		camera.setEnabled(true);
 		camera.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -300,6 +312,10 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 				Utility.log("camera", "path=" + dir.getAbsolutePath());
 				if (dir.exists() && dir.isDirectory()) {
 					File imagefile = new File(dir, imagename);
+					LatLng location = mapController.getLatestLocation();
+					preference.edit().putString("imagepath", imagefile.getAbsolutePath())
+					.putString("lat", String.valueOf(location.latitude))
+					.putString("lng", String.valueOf(location.longitude)).commit();
 					Uri imageUri = Uri.fromFile(imagefile);
 					// intent to launch Android camera app to take pictures
 					Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -325,14 +341,15 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			switch(resultCode){
 			case RESULT_OK:
 				Utility.log("map", "RESULT_OK");
-				
+				//let service do the work...
+				//save it to DB XXX
 				break;
 			case RESULT_FIRST_USER:
 			case RESULT_CANCELED:
 				Utility.log("map", "RESULT_CANCELED");
 			default:
 				Utility.log("map", "default");
-				
+//				preference.edit().remove("imagepath").remove("location").commit();
 				break;
 			}
 			break;
@@ -424,6 +441,15 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		startService();
 		// use local broadcast to start sharing instead
 		localbroadcast(IPCMessages.LOCALBROADCAST_START_SHARING);
+		// XXX show share action provider
+		Intent sendIntent = new Intent();
+		sendIntent.setAction(Intent.ACTION_SEND);
+		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
+		sendIntent.putExtra(Intent.EXTRA_TEXT,
+		"Click on the link to follow my lead..." + preference.getString("url", ""));
+		sendIntent.setType("text/plain");
+		startActivity(Intent.createChooser(sendIntent, "Share via..."));
+		
 	}
 	
 	private void showErrorMessage() {
@@ -435,9 +461,18 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	@Override
 	protected void onResume() {
 		super.onResume();
+		Utility.log("activity", "onresume");
 		// retrieve shared preference
 		getPreferences();
 		bindToService();
+//		if(AntrackService.isSharingLocation()){
+//			String imagepath = preference.getString("imagepath", null);
+//			LatLng location = new LatLng(Double.parseDouble(preference.getString("lat", "0")), Double.parseDouble(preference.getString("lng", "0")));
+//			if(imagepath != null){
+//				mapController.addPicture(imagepath, location);
+//				preference.edit().remove("imagepath").remove("lat").remove("lng").commit();
+//			}
+//		}
 	}
 	
 	private void getPreferences() {
@@ -450,7 +485,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	
 	void bindToService() {
 		// bind only when necessary
+		Utility.log("activity", "bind");
 		if (!mIsBound) {
+			Utility.log("activity", "really bind");
 			bindService(new Intent(AntrackMapActivity.this, AntrackService.class), mConnection,
 					Context.BIND_AUTO_CREATE);
 			mIsBound = true;
@@ -460,6 +497,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	@Override
 	protected void onPause() {
 		super.onPause();
+		Utility.log("activity", "onpause");
 		unbindFromService();
 		// save shared preference
 		savePreferences();

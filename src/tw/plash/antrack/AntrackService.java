@@ -1,9 +1,12 @@
 package tw.plash.antrack;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.TransformerException;
+
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -24,6 +27,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.android.volley.Response.Listener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
@@ -36,7 +40,6 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	private final String simpleName = "AntrackService";
 	
-//	private static boolean serviceIsRunning = false;
 	private static boolean serviceIsSharing = false;
 	
 	private LocationClient locationClient;
@@ -44,7 +47,6 @@ public class AntrackService extends Service implements LocationListener, Connect
 	private SharedPreferences preference;
 	private Location previousLocation;
 	
-	private DBHelper dbhelper;
 	private TripStatictics stats;
 	
 	private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -75,8 +77,11 @@ public class AntrackService extends Service implements LocationListener, Connect
 					Utility.log(simpleName, "handle msg: register: map");
 					mLocationSender = msg.replyTo;
 					if (isSharingLocation()) {
+						syncStuff();
 						//sync trajectory
-						syncTrajectory();
+//						syncTrajectory();
+						//sync image markers
+//						syncImageMarkers();
 					}
 					break;
 				case IPCMessages.STATS_FRAGMENT:
@@ -113,10 +118,21 @@ public class AntrackService extends Service implements LocationListener, Connect
 		}
 	}
 	
-	private void syncTrajectory() {
-		ArrayList<Location> locations = (ArrayList<Location>) dbhelper.getAllDisplayableLocations();
-		sendTrajectoryMessage(locations);
+	private void syncStuff(){
+		List<Location> locations = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getAllDisplayableLocations();
+		List<ImageMarker> imagemarkers = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getImageMarkers();
+		
 	}
+	
+//	private void syncTrajectory() {
+//		List<Location> locations = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getAllDisplayableLocations();
+//		sendTrajectoryMessage(locations);
+//	}
+	
+//	private void syncImageMarkers(){
+//		List<ImageMarker> imagemarkers = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getImageMarkers();
+//		sendImageMarkerMessage(imagemarkers);
+//	}
 	
 	private void syncStats(){
 		sendStatsUpdate(stats);
@@ -129,7 +145,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private void resetVariables() {
-		dbhelper.removeAllLocations();
+		AntrackApp.getInstance(getApplicationContext()).getDbhelper().removeAll();
 		stats.resetStats();
 		previousLocation = null;
 	}
@@ -155,6 +171,10 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	synchronized private void sendTrajectoryMessage(List<Location> locations){
 		sendMessageToMapActivity(IPCMessages.SYNC_CURRENT_TRAJECTORY, locations);
+	}
+	
+	synchronized private void sendImageMarkerMessage(List<ImageMarker> imagemarkers){
+		sendMessageToMapActivity(IPCMessages.SYNC_CURRENT_IMAGE_MARKERS, imagemarkers);
 	}
 	
 	synchronized private void sendMessageToMapActivity(int what, Object data) {
@@ -204,8 +224,6 @@ public class AntrackService extends Service implements LocationListener, Connect
 		
 		stats = new TripStatictics();
 		
-		dbhelper = new DBHelper(AntrackService.this);
-		
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(IPCMessages.LOCALBROADCAST_START_SHARING);
 		filter.addAction(IPCMessages.LOCALBROADCAST_STOP_SHARING);
@@ -230,10 +248,6 @@ public class AntrackService extends Service implements LocationListener, Connect
 		return mReceiver.getBinder();
 	}
 	
-//	public static boolean isRunning(){
-//		return serviceIsRunning;
-//	}
-	
 	public static boolean isSharingLocation() {
 		return serviceIsSharing;
 	}
@@ -246,13 +260,9 @@ public class AntrackService extends Service implements LocationListener, Connect
 		
 		LocalBroadcastManager.getInstance(AntrackService.this).unregisterReceiver(mBroadcastReceiver);
 		
-//		serviceIsRunning = false;
 		serviceIsSharing = false;
 		
 		stats = null;
-		
-		dbhelper.closeDB();
-		dbhelper = null;
 		
 		if(locationClient.isConnected() || locationClient.isConnecting()){
 			locationClient.removeLocationUpdates(AntrackService.this);
@@ -298,9 +308,9 @@ public class AntrackService extends Service implements LocationListener, Connect
 		//3. if sharing, save to db, upload, do stats
 		if(isSharingLocation()){
 			//save to db
-			dbhelper.insert(location, toDisplay);
+			AntrackApp.getInstance(getApplicationContext()).getDbhelper().insert(location, toDisplay);
 			//upload location
-//			uploadLocationToServer(location, toDisplay);
+			uploadLocationToServer(location, toDisplay);
 			if(toDisplay){
 				//do stats
 				stats.addLocation(location);
@@ -325,7 +335,11 @@ public class AntrackService extends Service implements LocationListener, Connect
 	private void uploadLocationToServer(Location location, boolean toDisplay) {
 		String token = preference.getString("token", null);
 		try {
-			AntrackApp.getInstance(getApplication()).getApi().upload(token, location, toDisplay, null, null);
+			AntrackApp.getInstance(getApplication()).getApi().upload(token, location, toDisplay, new Listener<JSONObject>() {
+				@Override
+				public void onResponse(JSONObject arg0) {
+				}
+			}, null);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}

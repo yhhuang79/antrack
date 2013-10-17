@@ -15,8 +15,9 @@ import android.location.Location;
 public class DBHelper {
 	
 	private static final String DATABASE_NAME = "antrack";
-	private static final int DATABASE_VERSION = 2;
+	private static final int DATABASE_VERSION = 4;
 	private static final String CURRENT_TRIP_TABLE = "currenttriptable";
+	private static final String IMAGES_TABLE = "imagestable";
 	private static final int ERROR_DB_IS_CLOSED = -2;
 	
 	private SQLiteDatabase db;
@@ -33,6 +34,13 @@ public class DBHelper {
 			+ "time INTEGER, "
 			+ "todisplay INTEGER)";
 	
+	private static final String CREATE_TABLE_IMAGES = "CREATE TABLE " + IMAGES_TABLE
+			+ "(id INTEGER PRIMARY KEY, "
+			+ "latitude REAL, "
+			+ "longitude REAL, "
+			+ "time INTEGER, "
+			+ "path TEXT)";
+	
 	private static class OpenHelper extends SQLiteOpenHelper {
 		
 		OpenHelper(Context context) {
@@ -43,6 +51,7 @@ public class DBHelper {
 		public void onCreate(SQLiteDatabase db) {
 			try {
 				db.execSQL(CREATE_TABLE_CURRENT_TRIP);
+				db.execSQL(CREATE_TABLE_IMAGES);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -52,6 +61,7 @@ public class DBHelper {
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			try {
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + CURRENT_TRIP_TABLE);
+				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + IMAGES_TABLE);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -67,6 +77,8 @@ public class DBHelper {
 			e.printStackTrace();
 		}
 	}
+	
+	
 	
 	synchronized public long insert(Location location, boolean toDisplay) {
 		if (db.isOpen()) {
@@ -104,9 +116,46 @@ public class DBHelper {
 		return locations;
 	}
 	
-	synchronized public void removeAllLocations(){
+	synchronized public long insertImageMarker(ImageMarker im){
+		return -1;
+	}
+	
+	synchronized public long insertImageMarker(Location location, String path){
+		if (db.isOpen()) {
+			ContentValues cv = new ContentValues();
+			cv.put("latitude", location.getLatitude());
+			cv.put("longitude", location.getLongitude());
+			cv.put("time", location.getTime());
+			cv.put("path", path);
+			return db.insert(IMAGES_TABLE, null, cv);
+		} else {
+			return ERROR_DB_IS_CLOSED;
+		}
+	}
+	
+	synchronized public List<ImageMarker> getImageMarkers(){
+		List<ImageMarker> imagemarkers = new ArrayList<ImageMarker>();
+		if(db.isOpen()){
+			Cursor cursor = db.query(IMAGES_TABLE, null, null, null, null, null, null);
+			if (cursor.moveToFirst()) {
+				do {
+					ImageMarker imageMarkerHolder = new ImageMarker();
+					imageMarkerHolder.setLatitude(cursor.getDouble(cursor.getColumnIndex("latitude")));
+					imageMarkerHolder.setLongitude(cursor.getDouble(cursor.getColumnIndex("longitude")));
+					imageMarkerHolder.setTime(cursor.getLong(cursor.getColumnIndex("time")));
+					imageMarkerHolder.setPath(cursor.getString(cursor.getColumnIndex("path")));
+					imagemarkers.add(imageMarkerHolder);
+				} while (cursor.moveToNext());
+			}
+			cursor.close();
+		}
+		return imagemarkers;
+	}
+	
+	synchronized public void removeAll(){
 		if(db.isOpen()){
 			db.delete(CURRENT_TRIP_TABLE, null, null);
+			db.delete(IMAGES_TABLE, null, null);
 		}
 	}
 	

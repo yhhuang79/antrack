@@ -1,13 +1,24 @@
 package tw.plash.antrack;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.location.Location;
+import tw.plash.antrack.connection.MultipartRequest;
+import tw.plash.antrack.connection.UploadRequest;
 
+import android.location.Location;
+import android.util.Log;
+
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Request.Method;
 import com.android.volley.RequestQueue;
@@ -27,7 +38,11 @@ public class AntrackApi {
 	public Request<?> initialize(String uuid, String username, String timestamp, Listener<JSONObject> listener, ErrorListener errorListener){
 		String param = "?action=initialize&uuid=" + uuid + "&username=" + Utility.encode(username) + "&timestamp=" + Utility.encode(timestamp);
 		String url = baseUrl + param; //make sure there's no whitespace or anything weird
-		return mResutstQueue.add(new JsonObjectRequest(Method.GET, url, null, listener, errorListener));
+		
+		JsonObjectRequest req = new JsonObjectRequest(Method.GET, url, null, listener, errorListener);
+		req.setRetryPolicy(new DefaultRetryPolicy(3000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+		
+		return mResutstQueue.add(req);
 	}
 	
 	/*
@@ -43,10 +58,10 @@ public class AntrackApi {
 			return null;
 		}
 		String url = baseUrl;
-		JSONObject postBody = new JSONObject();
 		
-		postBody.put("action", "upload");
-		postBody.put("token", token);
+		List<NameValuePair> param = new ArrayList<NameValuePair>();
+		param.add(new BasicNameValuePair("action", "upload"));
+		param.add(new BasicNameValuePair("token", token));
 		
 		JSONArray array = new JSONArray();
 		JSONObject obj = new JSONObject();
@@ -61,9 +76,12 @@ public class AntrackApi {
 		obj.put("todisplay", toDisplay? 1 : 0);
 		array.put(obj);
 		
-		postBody.put("location", array.toString());
+		param.add(new BasicNameValuePair("location", array.toString()));
+		Log.w("tw.", "upload: " + param.toString());
+		MultipartRequest req = new MultipartRequest(url, param, listener, errorListener);
+		req.setRetryPolicy(new DefaultRetryPolicy(3000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 		
-		return mResutstQueue.add(new JsonObjectRequest(Method.POST, url, postBody, listener, errorListener));
+		return mResutstQueue.add(req);
 	}
 	
 //	public Request<?> upload(String token, Map<Location, Integer> locations, Listener<JSONObject> listener, ErrorListener errorListener) throws JSONException{

@@ -75,7 +75,7 @@ public class TripStatictics implements Serializable{
 	}
 	
 	public String getDistanceString(){
-		return String.format("%.3f", totalDistance / 1000) + " m";
+		return String.format("%.3f", totalDistance / 1000) + "km";
 	}
 	
 	public String getAverageAccuracyString(){

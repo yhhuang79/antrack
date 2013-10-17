@@ -25,6 +25,7 @@ public interface IPCMessages {
 	final int UPDATE_NEW_LOCATION = 17;
 	//during sharing, when map activity is destroyed and re-created, current trajectory will be redrawn
 	final int SYNC_CURRENT_TRAJECTORY = 18;
+	final int SYNC_CURRENT_IMAGE_MARKERS = 19;
 	
 	/*
 	 * local broadcast
