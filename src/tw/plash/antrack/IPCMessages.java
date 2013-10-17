@@ -16,12 +16,19 @@ public interface IPCMessages {
 	/*
 	 * activity/fragment <- service
 	 */
+	
 	//when a new location is received, ew stats will be generated too
 	final int UPDATE_STATS = 14;
 	//when sharing is finished, summary stats of the last sharing will be calculated
-	final int UPDATE_STATS_SUMMARY = 15;
+//	final int UPDATE_STATS_SUMMARY = 16;
 	//when ever a new location is received, sharing or not
-	final int UPDATE_NEW_LOCATION = 16;
+	final int UPDATE_NEW_LOCATION = 17;
 	//during sharing, when map activity is destroyed and re-created, current trajectory will be redrawn
-	final int SYNC_CURRENT_TRAJECTORY = 17;
+	final int SYNC_CURRENT_TRAJECTORY = 18;
+	
+	/*
+	 * local broadcast
+	 */
+	final String LOCALBROADCAST_START_SHARING = "tw.plash.antrack.start.sharing";
+	final String LOCALBROADCAST_STOP_SHARING = "tw.plash.antrack.stop.sharing";
 }

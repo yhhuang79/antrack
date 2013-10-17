@@ -39,6 +39,9 @@ public class AntrackApi {
 	*/
 	
 	public Request<?> upload(String token, Location location, boolean toDisplay, Listener<JSONObject> listener, ErrorListener errorListener) throws JSONException{
+		if(token == null){
+			return null;
+		}
 		String url = baseUrl;
 		JSONObject postBody = new JSONObject();
 		
@@ -92,6 +95,9 @@ public class AntrackApi {
 //	}
 	
 	public Request<?> stop(String token, String timestamp, Listener<JSONObject> listener, ErrorListener errorListener){
+		if(token == null){
+			return null;
+		}
 		String param = "?action=stop&token=" + token;
 		String url = baseUrl + param;
 		return mResutstQueue.add(new JsonObjectRequest(Method.GET, url, null, listener, errorListener));

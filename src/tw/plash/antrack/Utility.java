@@ -7,6 +7,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
@@ -29,6 +31,7 @@ import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.telephony.TelephonyManager;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -253,6 +256,13 @@ public class Utility {
 		}
 //		Log.e("correct url encoder", "outParam=" + output);
 		return output;
+	}
+	
+	public static String getHHMMSSTimeString(long time){
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+		String timestring = sdf.format(new Date(time));
+		sdf = null;
+		return timestring;
 	}
 	
 	public static void log(String name, String msg){

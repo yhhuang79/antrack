@@ -8,7 +8,10 @@ import org.json.JSONException;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
@@ -18,6 +21,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -42,6 +46,18 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	private DBHelper dbhelper;
 	private TripStatictics stats;
+	
+	private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if(action.equals(IPCMessages.LOCALBROADCAST_START_SHARING)){
+				prepareToStartSharing();
+			} else if(action.equals(IPCMessages.LOCALBROADCAST_STOP_SHARING)){
+				prepareToStopSharing();
+			}
+		}
+	};
 	
 	private Messenger mLocationSender;
 	private Messenger mStatsSender;
@@ -84,11 +100,11 @@ public class AntrackService extends Service implements LocationListener, Connect
 				break;
 			case IPCMessages.START_SHARING:
 				Utility.log(simpleName, "handle msg: start sharing");
-				prepareToStartSharing();
+//				prepareToStartSharing();
 				break;
 			case IPCMessages.STOP_SHARING:
 				Utility.log(simpleName, "handle msg: stop sharing");
-				prepareToStopSharing();
+//				prepareToStopSharing();
 				break;
 			default:
 				Utility.log(simpleName, "handle msg: default");
@@ -129,7 +145,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	private void prepareToStopSharing() {
 		serviceIsSharing = false;
-		sendStatsSummary(stats); //XXX
+		sendStatsUpdate(stats); //XXX
 		stopForeground(true);
 	}
 	
@@ -158,10 +174,6 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	synchronized private void sendStatsUpdate(TripStatictics stats){
 		sendMessageToStatsFragment(IPCMessages.UPDATE_STATS, stats);
-	}
-	
-	synchronized private void sendStatsSummary(TripStatictics stats){
-		sendMessageToStatsFragment(IPCMessages.UPDATE_STATS_SUMMARY, stats);
 	}
 	
 	synchronized private void sendMessageToStatsFragment(int what, Object data){
@@ -193,6 +205,11 @@ public class AntrackService extends Service implements LocationListener, Connect
 		stats = new TripStatictics();
 		
 		dbhelper = new DBHelper(AntrackService.this);
+		
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(IPCMessages.LOCALBROADCAST_START_SHARING);
+		filter.addAction(IPCMessages.LOCALBROADCAST_STOP_SHARING);
+		LocalBroadcastManager.getInstance(AntrackService.this).registerReceiver(mBroadcastReceiver, filter);
 		Utility.log(simpleName, "onCreate: done");
 	}
 	
@@ -227,6 +244,8 @@ public class AntrackService extends Service implements LocationListener, Connect
 		
 		Utility.log(simpleName, "onDestroy: init");
 		
+		LocalBroadcastManager.getInstance(AntrackService.this).unregisterReceiver(mBroadcastReceiver);
+		
 //		serviceIsRunning = false;
 		serviceIsSharing = false;
 		
@@ -235,8 +254,11 @@ public class AntrackService extends Service implements LocationListener, Connect
 		dbhelper.closeDB();
 		dbhelper = null;
 		
-		locationClient.removeLocationUpdates(AntrackService.this);
-		locationClient.disconnect();
+		if(locationClient.isConnected() || locationClient.isConnecting()){
+			locationClient.removeLocationUpdates(AntrackService.this);
+			locationClient.disconnect();
+		}
+		locationClient = null;
 		
 		Utility.log(simpleName, "onDestroy: done");
 	}
@@ -278,11 +300,13 @@ public class AntrackService extends Service implements LocationListener, Connect
 			//save to db
 			dbhelper.insert(location, toDisplay);
 			//upload location
-			uploadLocationToServer(location, toDisplay);
-			//do stats
-			stats.addLocation(location);
-			//send stats
-			sendStatsUpdate(stats);
+//			uploadLocationToServer(location, toDisplay);
+			if(toDisplay){
+				//do stats
+				stats.addLocation(location);
+				//send stats
+				sendStatsUpdate(stats);
+			}
 		}
 	}
 	

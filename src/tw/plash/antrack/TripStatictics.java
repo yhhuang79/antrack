@@ -1,8 +1,7 @@
 package tw.plash.antrack;
 
 import java.io.Serializable;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.sql.Timestamp;
 
 import android.location.Location;
 import android.os.SystemClock;
@@ -12,7 +11,7 @@ public class TripStatictics implements Serializable{
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -3018274649384063742L;
+	private static final long serialVersionUID = 343414643452262890L;
 
 	private final double radius = 6371008.7714;
 	
@@ -24,6 +23,8 @@ public class TripStatictics implements Serializable{
 	private long baseTimeFromChorometerInMilliseconds;
 	private int numberOfWatcher;
 	
+	private String startTimeAsString;
+	
 	private Location previousLocation;
 	
 	public TripStatictics() {
@@ -33,6 +34,7 @@ public class TripStatictics implements Serializable{
 		averageSpeed = 0;
 		pointCounter = 0;
 		numberOfWatcher = 0;
+		startTimeAsString = null;
 		
 		previousLocation = null;
 	}
@@ -44,6 +46,7 @@ public class TripStatictics implements Serializable{
 		averageSpeed = 0;
 		pointCounter = 0;
 		numberOfWatcher = 0;
+		startTimeAsString = null;
 		
 		previousLocation = null;
 	}
@@ -51,7 +54,7 @@ public class TripStatictics implements Serializable{
 	public void addLocation(Location location){
 		pointCounter += 1;
 		if(previousLocation != null){
-			totalDistance += getGreatCircleDistance(location);
+			totalDistance += Utility.getDistance(previousLocation, location);
 			
 			double accuracySum = averageAccuracy * (pointCounter - 1);
 			averageAccuracy = (accuracySum + location.getAccuracy()) / pointCounter;
@@ -60,20 +63,6 @@ public class TripStatictics implements Serializable{
 			averageSpeed = (speedSum + location.getSpeed()) / pointCounter;
 		}
 		previousLocation = location;
-	}
-	
-	private double getGreatCircleDistance(Location location){
-		double dlat = toRad(location.getLatitude() - previousLocation.getLatitude());
-		double dlon = toRad(location.getLongitude() - previousLocation.getLongitude());
-		double latone = toRad(previousLocation.getLatitude());
-		double lattwo = toRad(location.getLatitude());
-		double a = Math.sin(dlat/2) * Math.sin(dlat/2) + Math.sin(dlon/2) * Math.sin(dlon/2) * Math.cos(latone) * Math.cos(lattwo);
-		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		return radius * c;
-	}
-	
-	private double toRad(Double degree){
-		return degree/180*Math.PI;
 	}
 	
 	public void setBaseTimeFromChronometer(long baseTimeFromChronometer){
@@ -85,23 +74,33 @@ public class TripStatictics implements Serializable{
 		return Utility.getDurationInSecondsAsFormattedString((elapsedTimeInMilliseconds / 1000));
 	}
 	
-	public String getDistance(){
-		return String.format("%.3f", totalDistance / 1000);
+	public String getDistanceString(){
+		return String.format("%.3f", totalDistance / 1000) + " m";
 	}
 	
-	public String getAverageAccuracy(){
-		return String.format("%.3f", averageAccuracy);
+	public String getAverageAccuracyString(){
+		return String.format("%.3f", averageAccuracy) + " m";
 	}
 	
-	public String getAverageSpeed(){
-		return String.format("%.3f", averageSpeed);
+	public String getAverageSpeedString(){
+		return String.format("%.3f", averageSpeed) + "m/s";
 	}
 	
 	public void setNumberOfWatcher(int number){
 		numberOfWatcher = number;
 	}
 	
-	public String getNumberOfWatcher(){
-		return numberOfWatcher + " people followed you";
+	public String getNumberOfFollowersString(){
+		return numberOfWatcher + " followers";
+	}
+	
+	public void restoreFromString(String toString){
+		
+	}
+	
+	@Override
+	public String toString() {
+		
+		return super.toString();
 	}
 }
