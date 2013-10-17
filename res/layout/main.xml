@@ -2,13 +2,20 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
-
+	
     <fragment
+        android:id="@+id/map"
+        class="tw.plash.antrack.AntrackSupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/footer" />
+    
+    <!-- <fragment
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/footer" />
+        android:layout_above="@+id/footer" /> -->
 
     <ImageButton
         android:id="@+id/fixlocation"
@@ -21,59 +28,64 @@
         android:background="@color/button_state"
         android:padding="3dip"
         android:scaleType="fitCenter"
-        android:src="@drawable/device_access_location_found" 
-        android:visibility="gone"/>
+        android:src="@drawable/device_access_location_found"/>
 
     <tw.plash.antrack.AntrackViewPager
         android:id="@+id/pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/footer" >
+        android:layout_above="@+id/footer" />
 
-        <!--
-        <android.support.v4.view.PagerTabStrip
-            android:id="@+id/pager_tab_strip"
-            android:layout_width="match_parent"
-            android:layout_height="32dip" 
-            android:layout_gravity="top"
-            android:background="@color/light_light_blue"
-            android:paddingBottom="4dp"
-            android:paddingTop="4dp"
-            android:textColor="#fff"/>
-        -->
-    </tw.plash.antrack.AntrackViewPager>
-
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/footer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dip"
         android:layout_alignParentBottom="true"
-        android:background="@drawable/pseudoactionbarbg"
-        android:orientation="horizontal"
-        android:padding="3dip"
-        android:weightSum="1.0" >
+        android:background="@color/android_blue"
+        android:padding="4dip" >
 
+        <ImageButton
+            android:id="@+id/settings"
+            android:layout_width="40dip"
+            android:layout_height="40dip"
+            android:layout_centerVertical="true"
+            android:background="@color/action_button_state"
+            android:scaleType="center"
+            android:src="@drawable/action_settings" />
+        
         <Button
             android:id="@+id/controlbutton"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_margin="3dip"
-            android:layout_weight="0.5"
-            android:text="BUTTON 1" />
+            android:layout_width="match_parent"
+            android:layout_height="40dip"
+            android:layout_toRightOf="@+id/settings"
+            android:layout_toLeftOf="@+id/camera"
+            android:layout_centerInParent="true"
+            android:layout_marginLeft="8dip"
+            android:layout_marginRight="8dip"
+            android:background="@color/action_button_state"
+            android:text="BUTTON 1"
+            android:textColor="@color/android_blue" />
 
-        <Button
-            android:layout_width="0dip"
+        <ImageButton
+            android:id="@+id/camera"
+            android:layout_width="40dip"
+            android:layout_height="40dip"
+            android:layout_centerVertical="true"
+            android:background="@color/action_button_state"
+            android:layout_alignParentRight="true"
+            android:scaleType="center"
+            android:src="@drawable/device_access_camera" />
+
+        <!-- <Button
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="3dip"
-            android:layout_weight="0.5"
-            android:text="Take a Picture" 
-            android:enabled="false"/>
-    </LinearLayout>
-    
-    <View 
-        android:layout_width="match_parent"
-        android:layout_height="4dip"
-        android:background="@color/light_light_blue"
-        android:layout_alignParentBottom="true"/>
+            android:layout_margin="10dip"
+            android:layout_toRightOf="@+id/camera"
+            android:background="@android:color/white"
+            android:enabled="false"
+            android:text="Settings"	
+            android:layout_centerVertical="true"
+            android:textColor="@color/android_blue" /> -->
+    </RelativeLayout>
 
 </RelativeLayout>

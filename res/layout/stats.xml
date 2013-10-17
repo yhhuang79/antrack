@@ -2,124 +2,174 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent"
-    android:padding="10dip" >
+    android:background="@null"
+    android:padding="15dip" >
 
-    <TableLayout
+    <RelativeLayout
+        android:id="@+id/stats_info"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/statsfragmentbg" >
+        android:background="@drawable/statsfragmentbg"
+        android:orientation="vertical"
+        android:weightSum="1.0" >
 
-        <TableRow
-            android:layout_margin="5dip"
-            android:weightSum="1" >
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.5"
-                android:orientation="vertical" 
-                android:background="#817A96">
-
-                <Chronometer
-                    android:id="@+id/duration_field"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:textSize="24sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="duration"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.5"
-                android:orientation="vertical" 
-                android:background="#817A96">
-
-                <TextView
-                    android:id="@+id/speed_field"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="n/a"
-                    android:textSize="24sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="speed"
-                    android:textSize="18sp" />
-            </LinearLayout>
-        </TableRow>
-
-        <TableRow
-            android:layout_margin="5dip"
-            android:weightSum="1" >
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.5"
-                android:orientation="vertical" 
-                android:background="#817A96">
-
-                <TextView
-                    android:id="@+id/distance_field"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="n/a"
-                    android:textSize="24sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="distance"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.5"
-                android:orientation="vertical" 
-                android:background="#817A96">
-
-                <TextView
-                    android:id="@+id/speed_field"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="n/a"
-                    android:textSize="24sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="avg speed"
-                    android:textSize="18sp" />
-            </LinearLayout>
-        </TableRow>
-
-        <TextView
-            android:id="@+id/number_of_watchers"
+        <RelativeLayout
+            android:id="@+id/stats_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="5dip"
-            android:gravity="center_horizontal"
-            android:text="0 people are watching you"
-            android:textSize="22sp" 
-            android:background="#817A96"/>
-    </TableLayout>
+            android:background="@null" >
+
+            <ImageView
+                android:id="@+id/profile_picture"
+                android:layout_width="100dip"
+                android:layout_height="100dip"
+                android:layout_centerInParent="true"
+                android:layout_marginTop="40dip"
+                android:scaleType="fitCenter"
+                android:src="@drawable/actionbar_addfriend" />
+
+            <View
+                android:id="@+id/centerline"
+                android:layout_width="0dip"
+                android:layout_height="0dip"
+                android:layout_centerHorizontal="true" />
+
+            <LinearLayout
+                android:id="@+id/photos_block"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dip"
+                android:layout_toRightOf="@+id/centerline"
+                android:background="@drawable/dialog_right_up"
+                android:orientation="vertical"
+                android:paddingLeft="12dip"
+                android:paddingRight="12dip"
+                android:paddingTop="4dip" >
+
+                <TextView
+                    style="@style/StatsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Photos" />
+
+                <TextView
+                    android:id="@+id/number_of_photos"
+                    style="@style/StatsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/photos_block"
+                android:layout_marginLeft="30dip"
+                android:layout_marginTop="15dip"
+                android:layout_toRightOf="@+id/centerline"
+                android:background="@drawable/dialog_right_down"
+                android:orientation="vertical"
+                android:paddingLeft="12dip"
+                android:paddingRight="12dip"
+                android:paddingTop="6dip" >
+
+                <TextView
+                    style="@style/StatsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Distance" />
+
+                <TextView
+                    android:id="@+id/distance"
+                    style="@style/StatsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 m" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/profile_picture"
+                android:layout_centerHorizontal="true"
+                android:text="INPUT NAME HERE"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/starttime_block"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="20dip"
+                android:layout_toLeftOf="@+id/centerline"
+                android:background="@drawable/dialog_left_up"
+                android:orientation="vertical"
+                android:paddingLeft="12dip"
+                android:paddingRight="12dip"
+                android:paddingTop="4dip" >
+
+                <TextView
+                    style="@style/StatsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Started at" />
+
+                <TextView
+                    android:id="@+id/start_time"
+                    style="@style/StatsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00:00" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/starttime_block"
+                android:layout_marginRight="30dip"
+                android:layout_marginTop="15dip"
+                android:layout_toLeftOf="@+id/centerline"
+                android:background="@drawable/dialog_left_down"
+                android:orientation="vertical"
+                android:paddingLeft="12dip"
+                android:paddingRight="12dip"
+                android:paddingTop="6dip" >
+
+                <TextView
+                    style="@style/StatsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Duration" />
+
+                <Chronometer
+                    android:id="@+id/duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="00:00"
+                    style="@style/StatsText" />
+
+            </LinearLayout>
+        </RelativeLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/stats_panel" >
+
+            <ListView
+                android:id="@android:id/list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" >
+            </ListView>
+
+            <TextView
+                android:id="@android:id/empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+    </RelativeLayout>
 
 </FrameLayout>
