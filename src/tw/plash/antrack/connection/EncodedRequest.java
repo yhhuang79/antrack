@@ -19,13 +19,13 @@ import com.android.volley.Response;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.HttpHeaderParser;
 
-public class MultipartRequest extends Request<JSONObject> {
+public class EncodedRequest extends Request<JSONObject> {
 	
 	private UrlEncodedFormEntity entity;
 	
 	private final Response.Listener<JSONObject> mListener;
 	
-	public MultipartRequest(String url, List<NameValuePair> params, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener
+	public EncodedRequest(String url, List<NameValuePair> params, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener
 			) {
 		super(Method.POST, url, errorListener);
 		
