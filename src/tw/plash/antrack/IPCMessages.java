@@ -32,4 +32,5 @@ public interface IPCMessages {
 	 */
 	final String LOCALBROADCAST_START_SHARING = "tw.plash.antrack.start.sharing";
 	final String LOCALBROADCAST_STOP_SHARING = "tw.plash.antrack.stop.sharing";
+	final String LOCALBROADCAST_ = "tw.plash.antrack.";
 }

@@ -1,23 +1,22 @@
 package tw.plash.antrack.connection;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.ByteArrayBody;
 import org.apache.http.entity.mime.content.StringBody;
-import org.apache.http.protocol.HTTP;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import tw.plash.antrack.Utility;
+import android.graphics.Bitmap;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
@@ -48,14 +47,17 @@ public class MultipartRequest extends Request<JSONObject> {
 	}
 	
 	private void buildMultipartEntity() throws IOException{
-		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filepart));
-		byte[] ba = new byte[(int) filepart.length()];
-		bis.read(ba);
-		bis.close();
 		String path = filepart.getAbsolutePath();
+		Bitmap bitmap = Utility.getThumbnail(path, 150, 150);
+		int bytes = bitmap.getByteCount();
+		ByteBuffer buffer = ByteBuffer.allocate(bytes);
+		bitmap.copyPixelsToBuffer(buffer);
+//		bitmap.recycle();
+		byte[] ba = buffer.array();
 		ByteArrayBody bab = new ByteArrayBody(ba, path.substring(path.lastIndexOf("/") + 1));
 		ba = null;
 		entity.addPart("picture", bab);
+		bitmap.recycle();
 	}
 	
 	@Override

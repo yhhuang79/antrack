@@ -7,12 +7,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.media.ThumbnailUtils;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -58,6 +60,7 @@ public class MapController {
 		for (Location location : locations) {
 			pline.add(location2LatLng(location));
 		}
+		pline.color(0xffdd0000);
 		trajectory = gmap.addPolyline(pline);
 		List<LatLng> points = trajectory.getPoints();
 		LatLng firstPoint = points.get(0);
@@ -79,10 +82,33 @@ public class MapController {
 		gmap.addMarker(new MarkerOptions().position(position).title(title));
 	}
 	
-	synchronized public void addPicture(String imagePath, LatLng location) {
-		Bitmap thumbnail = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(imagePath), 64, 64);
-		gmap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(thumbnail)).position(location));
-		Log.e("tw.plash", "image marker at " + location);
+	synchronized public void addImageMarkers(List<ImageMarker> imagemarkers){
+		for(ImageMarker im : imagemarkers){
+			LatLng latlng = new LatLng(im.getLatitude(), im.getLongitude());
+			String path = im.getPath();
+			Utility.log("controller", path + ", " + latlng.toString());
+			new markerloader(latlng, path).execute();
+		}
+	}
+	
+	private class markerloader extends AsyncTask<Void, Void, Bitmap>{
+		private LatLng latlng;
+		private String path;
+		public markerloader(LatLng latlng, String path) {
+			this.latlng = latlng;
+			this.path = path;
+		}
+		@Override
+		protected Bitmap doInBackground(Void... params) {
+			return Utility.getThumbnail(path, 72, 72);
+		}
+		@Override
+		protected void onPostExecute(Bitmap result) {
+			super.onPostExecute(result);
+			if(gmap != null){
+				gmap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(result)).position(latlng));
+			}
+		}
 	}
 	
 	private void animateToLocation(Location location){

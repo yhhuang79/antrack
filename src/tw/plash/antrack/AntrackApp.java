@@ -1,10 +1,15 @@
 package tw.plash.antrack;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import tw.plash.antrack.connection.EncodedRequest;
 
 import android.content.Context;
 
@@ -19,13 +24,19 @@ public class AntrackApp {
 	private AntrackApi mApi;
 	private RequestQueue queue;
 	private DBHelper dbhelper;
+	private List<String> imagepaths;
+	private StatsUpdater statsUpdater;
+	private ImageMarker imagemarkerholder;
+	private int followers;
 	
 	private AntrackApp(Context context) {
-		
 		queue = Volley.newRequestQueue(context, new HurlStack(null, getSSLSocketFactory(), DO_NOT_VERIFY));
 		mApi = new AntrackApi(queue);
 		dbhelper = new DBHelper(context);
-		
+		imagepaths = new ArrayList<String>();
+		statsUpdater = new StatsUpdater();
+		imagemarkerholder = null;
+		followers = 0;
 	}
 	
 	public AntrackApi getApi(){
@@ -34,6 +45,46 @@ public class AntrackApp {
 	
 	public DBHelper getDbhelper(){
 		return dbhelper;
+	}
+	
+	public StatsUpdater getStatsUpdater(){
+		return statsUpdater;
+	}
+	
+	public void setImageMarker(ImageMarker im){
+		imagemarkerholder = im;
+	}
+	
+	public ImageMarker getImageMarker(){
+		return imagemarkerholder;
+	}
+	
+	public void commitImageMarker(){
+		Utility.log("singleton", imagemarkerholder.getPath() + ", " + imagemarkerholder.getLatitude() + ", " + imagemarkerholder.getLongitude());
+		dbhelper.insertImageMarker(imagemarkerholder);
+		imagemarkerholder = null;
+	}
+	
+	public void resetImagePaths(){
+		imagepaths.clear();
+	}
+	
+	public void addImagePath(String path){
+		if(!imagepaths.contains(path)){
+			imagepaths.add(path);
+		}
+	}
+	
+	public List<String> getImagePaths(){
+		return imagepaths;
+	}
+	
+	public void setFollowers(int num){
+		followers = num;
+	}
+	
+	public int getFollowers(){
+		return followers;
 	}
 	
 	public static synchronized AntrackApp getInstance(Context context){

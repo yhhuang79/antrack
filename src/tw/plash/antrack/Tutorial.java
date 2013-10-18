@@ -9,6 +9,7 @@ import android.preference.PreferenceManager;
 import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -26,7 +27,7 @@ public class Tutorial extends Activity {
 		
 		pref = PreferenceManager.getDefaultSharedPreferences(Tutorial.this);
 		if (pref.getBoolean("firsttime", true)) {
-			setScreenContent(R.layout.intro);
+			setScreenContent(R.layout.tutorialstep1);
 		} else {
 			finishThisAndGoToMapActivity();
 		}
@@ -35,9 +36,6 @@ public class Tutorial extends Activity {
 	private void setScreenContent(int layoutID) {
 		setContentView(layoutID);
 		switch (layoutID) {
-		case R.layout.intro:
-			setIntroPageContent();
-			break;
 		case R.layout.tutorialstep1:
 			setTutorialStep1PageContent();
 			break;
@@ -50,33 +48,21 @@ public class Tutorial extends Activity {
 		case R.layout.tutorialstep4:
 			setTutorialStep4PageContent();
 			break;
+		case R.layout.tutorialstep5:
+			setTutorialStep5PageContent();
+			break;
+		case R.layout.tutorialstep6:
+			setTutorialStep6PageContent();
+			break;
 		case R.layout.setup:
 			setSetupPageContent();
 			break;
 		}
 	}
 	
-	private void setIntroPageContent() {
-		Button previous = (Button) findViewById(R.id.previous);
-		previous.setVisibility(View.GONE);
-		
-		Button next = (Button) findViewById(R.id.next);
-		next.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				setScreenContent(R.layout.tutorialstep1);
-			}
-		});
-	}
-	
 	private void setTutorialStep1PageContent() {
 		Button previous = (Button) findViewById(R.id.previous);
-		previous.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				setScreenContent(R.layout.intro);
-			}
-		});
+		previous.setVisibility(View.GONE);
 		
 		Button next = (Button) findViewById(R.id.next);
 		next.setOnClickListener(new View.OnClickListener() {
@@ -136,6 +122,42 @@ public class Tutorial extends Activity {
 		next.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				setScreenContent(R.layout.tutorialstep5);
+			}
+		});
+	}
+	
+	private void setTutorialStep5PageContent() {
+		Button previous = (Button) findViewById(R.id.previous);
+		previous.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				setScreenContent(R.layout.tutorialstep4);
+			}
+		});
+		
+		Button next = (Button) findViewById(R.id.next);
+		next.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				setScreenContent(R.layout.tutorialstep6);
+			}
+		});
+	}
+	
+	private void setTutorialStep6PageContent() {
+		Button previous = (Button) findViewById(R.id.previous);
+		previous.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				setScreenContent(R.layout.tutorialstep5);
+			}
+		});
+		
+		Button next = (Button) findViewById(R.id.next);
+		next.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
 				setScreenContent(R.layout.setup);
 			}
 		});
@@ -147,12 +169,14 @@ public class Tutorial extends Activity {
 		previous.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				setScreenContent(R.layout.tutorialstep4);
+				setScreenContent(R.layout.tutorialstep6);
 			}
 		});
 		
 		final EditText et = (EditText) findViewById(R.id.nameinput);
 		final CheckBox cb = (CheckBox) findViewById(R.id.legal);
+		cb.setText(R.string.legal_stuff);
+		cb.setMovementMethod(LinkMovementMethod.getInstance());
 		final Button next = (Button) findViewById(R.id.next);
 		next.setEnabled(false);
 		

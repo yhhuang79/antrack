@@ -11,13 +11,15 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
+import android.webkit.WebChromeClient.CustomViewCallback;
 
 public class DBHelper {
 	
 	private static final String DATABASE_NAME = "antrack";
-	private static final int DATABASE_VERSION = 4;
+	private static final int DATABASE_VERSION = 6;
 	private static final String CURRENT_TRIP_TABLE = "currenttriptable";
 	private static final String IMAGES_TABLE = "imagestable";
+	private static final String STATS_TABLE = "statstable";
 	private static final int ERROR_DB_IS_CLOSED = -2;
 	
 	private SQLiteDatabase db;
@@ -41,6 +43,13 @@ public class DBHelper {
 			+ "time INTEGER, "
 			+ "path TEXT)";
 	
+	private static final String CREATE_TABLE_STATS = "CREATE TABLE " + STATS_TABLE
+			+ "(id INTEGER PRIMARY KEY, "
+			+ "starttime TEXT, "
+			+ "duration TEXT, "
+			+ "durationbase REAL, "
+			+ "distance TEXT)";
+	
 	private static class OpenHelper extends SQLiteOpenHelper {
 		
 		OpenHelper(Context context) {
@@ -52,6 +61,7 @@ public class DBHelper {
 			try {
 				db.execSQL(CREATE_TABLE_CURRENT_TRIP);
 				db.execSQL(CREATE_TABLE_IMAGES);
+				db.execSQL(CREATE_TABLE_STATS);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -62,6 +72,7 @@ public class DBHelper {
 			try {
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + CURRENT_TRIP_TABLE);
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + IMAGES_TABLE);
+				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + STATS_TABLE);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -117,16 +128,12 @@ public class DBHelper {
 	}
 	
 	synchronized public long insertImageMarker(ImageMarker im){
-		return -1;
-	}
-	
-	synchronized public long insertImageMarker(Location location, String path){
 		if (db.isOpen()) {
 			ContentValues cv = new ContentValues();
-			cv.put("latitude", location.getLatitude());
-			cv.put("longitude", location.getLongitude());
-			cv.put("time", location.getTime());
-			cv.put("path", path);
+			cv.put("latitude", im.getLatitude());
+			cv.put("longitude", im.getLongitude());
+			cv.put("time", im.getTime());
+			cv.put("path", im.getPath());
 			return db.insert(IMAGES_TABLE, null, cv);
 		} else {
 			return ERROR_DB_IS_CLOSED;
@@ -152,10 +159,44 @@ public class DBHelper {
 		return imagemarkers;
 	}
 	
+	synchronized public Stats getStats(){
+		Stats stats = new Stats();
+		if(db.isOpen()){
+			Cursor cursor = db.query(STATS_TABLE, null, null, null, null, null, null);
+			if (cursor.moveToFirst()) {
+				stats.setStarttime(cursor.getString(cursor.getColumnIndex("starttime")));
+				stats.setDuration(cursor.getString(cursor.getColumnIndex("duration")));
+				stats.setDurationbase(cursor.getLong(cursor.getColumnIndex("durationbase")));
+				stats.setDistance(cursor.getString(cursor.getColumnIndex("distance")));
+			}
+			cursor.close();
+		}
+		return stats;
+	}
+	
+	synchronized public long setStats(Stats stats){
+		if(db.isOpen()){
+			db.delete(STATS_TABLE, null, null);
+			ContentValues cv = new ContentValues();
+			cv.put("starttime", stats.getStarttime());
+			cv.put("duration", stats.getDuration());
+			cv.put("durationbase", stats.getDurationbase());
+			cv.put("distance", stats.getDistance());
+			return db.insert(STATS_TABLE, null, cv);
+		}
+		return ERROR_DB_IS_CLOSED;
+	}
+	
 	synchronized public void removeAll(){
 		if(db.isOpen()){
 			db.delete(CURRENT_TRIP_TABLE, null, null);
 			db.delete(IMAGES_TABLE, null, null);
+		}
+	}
+	
+	synchronized public void removeStats(){
+		if(db.isOpen()){
+			db.delete(STATS_TABLE, null, null);
 		}
 	}
 	

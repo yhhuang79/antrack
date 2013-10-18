@@ -1,44 +1,43 @@
 package tw.plash.antrack;
 
-import android.app.Activity;
+import java.util.List;
+
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.GridView;
 
 public class PhotoFragment extends Fragment {
 	
+	private GridView gridview;
+	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		View rootview = inflater.inflate(R.layout.dummy2, container, false);
-		Log.i("ANTRACK", "Photo: onCreateView");
+		View rootview = inflater.inflate(R.layout.photos, container, false);
+		gridview = (GridView) rootview.findViewById(R.id.photos);
 		return rootview;
 	}
 	
 	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-		
-//		setHasOptionsMenu(true);
-		Log.i("ANTRACK", "Photo: onActivityCreated");
-//		getLoaderManager().initLoader(0, null, this);
-	}
-	
-	@Override
-	public void onPause() {
-		super.onPause();
-		Log.i("ANTRACK", "photo: onPause");
-	}
-	
-	@Override
 	public void onResume() {
-		// TODO Auto-generated method stub
 		super.onResume();
-		Log.i("ANTRACK", "photo: onResume");
+		List<String> globalImagePaths = AntrackApp.getInstance(getActivity()).getImagePaths();
+		// there are new images to be shown
+		PhotosAdapter adapter = new PhotosAdapter(getActivity(), globalImagePaths);
+		gridview.setAdapter(adapter);
+		gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				Intent intent = new Intent();
+				intent.setAction(Intent.ACTION_VIEW);
+				intent.setDataAndType(Uri.parse("file://" + gridview.getItemAtPosition(position)), "image/*");
+				startActivity(intent);
+			}
+		});
 	}
 }

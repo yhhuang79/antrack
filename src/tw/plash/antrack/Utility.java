@@ -1,40 +1,29 @@
 package tw.plash.antrack;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
-import java.security.KeyStore;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.http.HttpVersion;
-import org.apache.http.client.HttpClient;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.HTTP;
-
-import tw.plash.antrack.connection.AndroidSSLSocketFactory;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 import android.location.Location;
 import android.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.telephony.TelephonyManager;
-import android.text.format.DateUtils;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
@@ -165,32 +154,32 @@ public class Utility {
 		return false;
 	}
 	
-	public static HttpClient getHttpsClient() {
-		try {
-			KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-			trustStore.load(null, null);
-			SSLSocketFactory sf = new AndroidSSLSocketFactory(trustStore);
-			sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-			HttpParams params = new BasicHttpParams();
-			
-			// set connection timeout
-			int timeoutConnection = 3000;
-			HttpConnectionParams.setConnectionTimeout(params, timeoutConnection);
-			// set socket timeout
-			int timeoutSocket = 10000;
-			HttpConnectionParams.setSoTimeout(params, timeoutSocket);
-			
-			HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-			HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);
-			SchemeRegistry registry = new SchemeRegistry();
-			registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-			registry.register(new Scheme("https", sf, 443));
-			ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, registry);
-			return new DefaultHttpClient(ccm, params);
-		} catch (Exception e) {
-			return new DefaultHttpClient();
-		}
-	}
+//	public static HttpClient getHttpsClient() {
+//		try {
+//			KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+//			trustStore.load(null, null);
+//			SSLSocketFactory sf = new AndroidSSLSocketFactory(trustStore);
+//			sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+//			HttpParams params = new BasicHttpParams();
+//			
+//			// set connection timeout
+//			int timeoutConnection = 3000;
+//			HttpConnectionParams.setConnectionTimeout(params, timeoutConnection);
+//			// set socket timeout
+//			int timeoutSocket = 10000;
+//			HttpConnectionParams.setSoTimeout(params, timeoutSocket);
+//			
+//			HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
+//			HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);
+//			SchemeRegistry registry = new SchemeRegistry();
+//			registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+//			registry.register(new Scheme("https", sf, 443));
+//			ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, registry);
+//			return new DefaultHttpClient(ccm, params);
+//		} catch (Exception e) {
+//			return new DefaultHttpClient();
+//		}
+//	}
 	
 	public static String getDurationInSecondsAsFormattedString(long durationInSeconds){
 		Double hours = ((double) durationInSeconds) / 60 / 60;
@@ -332,5 +321,96 @@ public class Utility {
 			Log.e("ExifEditor Error", "input path: " + path);
 			e.printStackTrace();
 		}
+	}
+	
+	public static Bitmap getThumbnail(String path, int width, int height){
+		System.gc();
+		int inWidth = 0;
+		int inHeight = 0;
+		
+		InputStream in;
+		Bitmap bitmap = null;
+		try {
+			in = new FileInputStream(path);
+			// decode image size (decode metadata only, not the whole image)
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inJustDecodeBounds = true;
+			BitmapFactory.decodeStream(in, null, options);
+			in.close();
+			in = null;
+			System.gc();
+			// save width and height
+			inWidth = options.outWidth;
+			inHeight = options.outHeight;
+			
+			// decode full image pre-resized
+			in = new FileInputStream(path);
+			options = new BitmapFactory.Options();
+			// calc rought re-size (this is no exact resize)
+			options.inSampleSize = Math.max(inWidth / width, inHeight / height);
+			// decode full image
+			bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeStream(in, null, options), width, height);
+			System.gc();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		//i mean...why not? the more the better...
+		System.gc();
+		return bitmap;
+	}
+	
+	public static void resizeBitmap(String inputPath, String outputPath, int desiredWidth, int desiredHeight) {
+		//see if the added gc calls to the system can reduce the chance of OOM
+		System.gc();
+		try {
+			int inWidth = 0;
+			int inHeight = 0;
+			
+			InputStream in = new FileInputStream(inputPath);
+			
+			// decode image size (decode metadata only, not the whole image)
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inJustDecodeBounds = true;
+			BitmapFactory.decodeStream(in, null, options);
+			in.close();
+			in = null;
+			
+			// save width and height
+			inWidth = options.outWidth;
+			inHeight = options.outHeight;
+			
+			// decode full image pre-resized
+			in = new FileInputStream(inputPath);
+			options = new BitmapFactory.Options();
+			// calc rought re-size (this is no exact resize)
+			options.inSampleSize = Math.max(inWidth / desiredWidth, inHeight / desiredHeight);
+			// decode full image
+			Bitmap roughBitmap = BitmapFactory.decodeStream(in, null, options);
+			
+			// calc exact destination size
+			Matrix m = new Matrix();
+			RectF inRect = new RectF(0, 0, roughBitmap.getWidth(), roughBitmap.getHeight());
+			RectF outRect = new RectF(0, 0, desiredWidth, desiredHeight);
+			m.setRectToRect(inRect, outRect, Matrix.ScaleToFit.CENTER);
+			float[] values = new float[9];
+			m.getValues(values);
+			
+			// resize bitmap
+			Bitmap resizedBitmap = Bitmap.createScaledBitmap(roughBitmap, (int) (roughBitmap.getWidth() * values[0]),
+					(int) (roughBitmap.getHeight() * values[4]), true);
+			
+			// save image
+			try {
+				FileOutputStream out = new FileOutputStream(outputPath);
+				resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
+			} catch (Exception e) {
+				Log.e("Image", e.getMessage(), e);
+			}
+		} catch (IOException e) {
+			Log.e("Image", e.getMessage(), e);
+		}
+		System.gc();
 	}
 }
