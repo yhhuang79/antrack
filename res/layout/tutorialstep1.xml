@@ -3,14 +3,35 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-    <TextView 
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="STEP 1"
-        android:textSize="36sp"
-        android:layout_centerInParent="true"/>
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/tutorial1" 
+        android:layout_above="@+id/footer"/>
 
-    <include 
-        layout="@layout/footer" />
+    <LinearLayout
+        android:id="@+id/footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true" 
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/previous"
+            android:layout_width="0dip"
+            android:layout_weight="0.5"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dip"
+            android:text="Previous" />
+
+        <Button
+            android:id="@+id/next"
+            android:layout_width="0dip"
+            android:layout_weight="0.5"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dip"
+            android:text="Next" />
+    </LinearLayout>
 
 </RelativeLayout>

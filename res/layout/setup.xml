@@ -5,26 +5,56 @@
 
     <TextView
         android:id="@+id/textview"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="SETUP"
+        android:layout_above="@+id/nameinput"
+        android:padding="15dip"
+        android:layout_marginBottom="15dip"
+        android:text="Just one more thing..."
         android:textSize="36sp" />
 
     <EditText
         android:id="@+id/nameinput"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textview"
-        android:hint="what\&apos;s your name\?" />
+        android:layout_centerInParent="true"
+        android:hint="what\&apos;s your name\?"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip" 
+        android:layout_marginBottom="15dip"
+        android:imeOptions="actionDone"
+        android:inputType="textPersonName"
+        android:singleLine="true"/>
 
     <CheckBox
         android:id="@+id/legal"
+        android:layout_margin="10dip"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/nameinput"
-        android:text="you agree to our legal stuff" />
+        android:layout_below="@+id/nameinput"/>
 
-    <include layout="@layout/footer" />
+    <LinearLayout
+        android:id="@+id/footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true" 
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/previous"
+            android:layout_width="0dip"
+            android:layout_weight="0.5"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dip"
+            android:text="Previous" />
+
+        <Button
+            android:id="@+id/next"
+            android:layout_width="0dip"
+            android:layout_weight="0.5"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dip"
+            android:text="Next" />
+    </LinearLayout>
 
 </RelativeLayout>

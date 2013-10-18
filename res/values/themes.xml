@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- the theme applied to the application or activity -->
     <style name="CustomActionBarTheme" parent="@style/Theme.AppCompat.Light">
-
-        <!-- Support library compatibility -->
         <item name="actionBarStyle">@style/MyActionBar</item>
         <item name="actionBarTabStyle">@style/MyActionBarTabs</item>
         <item name="actionBarTabTextStyle">@style/MyActionBarTexts</item>
@@ -12,13 +9,11 @@
 
     <style name="MyActionBar" parent="@style/Widget.AppCompat.ActionBar">
         <item name="android:background">@color/android_blue</item>
+        <item name="backgroundStacked">@color/android_blue</item>
     </style>
     
-    <!-- ActionBar tabs styles -->
     <style name="MyActionBarTabs" parent="@style/Widget.AppCompat.ActionBar.TabView">
-
-        <!-- Support library compatibility -->
-        <item name="background">@drawable/custom_tab_stack</item>
+        <item name="android:background">@drawable/custom_tab_stack</item>
     </style>
 
     <style name="MyActionBarTexts" parent="@style/Widget.AppCompat.ActionBar.TabText">

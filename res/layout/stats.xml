@@ -9,14 +9,13 @@
         android:id="@+id/stats_info"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/statsfragmentbg"
-        android:orientation="vertical"
-        android:weightSum="1.0" >
+        android:background="@drawable/fragmentbg" >
 
         <RelativeLayout
             android:id="@+id/stats_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
             android:background="@null" >
 
             <ImageView
@@ -98,6 +97,15 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/followers"
+                style="@style/StatsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/name"
+                android:layout_centerHorizontal="true"
+                android:text="0 followers" />
+
             <LinearLayout
                 android:id="@+id/starttime_block"
                 android:layout_width="wrap_content"
@@ -145,15 +153,15 @@
 
                 <Chronometer
                     android:id="@+id/duration"
+                    style="@style/StatsText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="00:00"
-                    style="@style/StatsText" />
-
+                    android:text="00:00" />
             </LinearLayout>
         </RelativeLayout>
 
+        <!--
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -170,6 +178,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </FrameLayout>
+        -->
     </RelativeLayout>
 
 </FrameLayout>

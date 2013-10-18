@@ -7,7 +7,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="fitCenter"
-        android:src="@drawable/tutorial4" 
+        android:src="@drawable/tutorial5" 
         android:layout_above="@+id/footer"/>
 
     <LinearLayout

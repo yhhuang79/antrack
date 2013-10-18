@@ -12,6 +12,7 @@
 
     <style name="MyActionBar" parent="@style/Widget.AppCompat.ActionBar">
         <item name="android:background">@color/android_blue</item>
+        <item name="backgroundStacked">@color/android_blue</item>
     </style>
     
     <!-- ActionBar tabs styles -->
