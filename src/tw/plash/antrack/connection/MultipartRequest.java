@@ -1,12 +1,20 @@
 package tw.plash.antrack.connection;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.ByteArrayBody;
+import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.protocol.HTTP;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,22 +27,35 @@ import com.android.volley.Response;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.HttpHeaderParser;
 
-public class MultipartEntityRequest extends Request<JSONObject> {
+public class MultipartRequest extends Request<JSONObject> {
 	
-	private UrlEncodedFormEntity entity;
+	private MultipartEntity entity;
 	
 	private final Response.Listener<JSONObject> mListener;
+	private final File filepart;
 	
-	public MultipartEntityRequest(String url, List<NameValuePair> params, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener
-			) {
+	public MultipartRequest(String url, List<NameValuePair> params, File file, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener
+			) throws IOException {
 		super(Method.POST, url, errorListener);
 		
 		mListener = listener;
-		try {
-			entity = new UrlEncodedFormEntity(params, HTTP.UTF_8);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
+		entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+		filepart = file;
+		for(NameValuePair nvp : params){
+			entity.addPart(nvp.getName(), new StringBody(nvp.getValue()));
 		}
+		buildMultipartEntity();
+	}
+	
+	private void buildMultipartEntity() throws IOException{
+		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filepart));
+		byte[] ba = new byte[(int) filepart.length()];
+		bis.read(ba);
+		bis.close();
+		String path = filepart.getAbsolutePath();
+		ByteArrayBody bab = new ByteArrayBody(ba, path.substring(path.lastIndexOf("/") + 1));
+		ba = null;
+		entity.addPart("picture", bab);
 	}
 	
 	@Override
