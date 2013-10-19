@@ -13,7 +13,6 @@ public class StatsFragment extends Fragment {
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		Utility.log("stats", "onCreateViews");
 		View rootview = inflater.inflate(R.layout.stats, container, false);
 		View statsPanel = rootview.findViewById(R.id.stats_info);
 		SharedPreferences preference = PreferenceManager.getDefaultSharedPreferences(getActivity());
@@ -25,14 +24,12 @@ public class StatsFragment extends Fragment {
 	@Override
 	public void onResume() {
 		super.onResume();
-		Utility.log("stats", "onResume");
 		AntrackApp.getInstance(getActivity()).getStatsUpdater().onResume();
 	}
 	
 	@Override
 	public void onPause() {
 		super.onPause();
-		Utility.log("stats", "onPause");
 		AntrackApp.getInstance(getActivity()).getStatsUpdater().onPause();
 	}
 }

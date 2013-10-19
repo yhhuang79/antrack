@@ -229,7 +229,6 @@ public class Tutorial extends Activity {
 	
 	private void generateUniqueId(){
 		String uuid = Installation.id(Tutorial.this);
-		Utility.log("uuid=" + uuid);
 		pref.edit().putString("uuid", uuid).commit();
 	}
 	

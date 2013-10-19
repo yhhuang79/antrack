@@ -79,7 +79,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case IPCMessages.SYNC_CURRENT_TRAJECTORY: {
-				Utility.log("activity", "sync trajectory");
 				List<Location> locations = (List<Location>) msg.obj;
 				if (!locations.isEmpty()) {
 					clearMapAndDrawSyncedTrajectory(locations);
@@ -87,7 +86,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			}
 				break;
 			case IPCMessages.SYNC_CURRENT_IMAGE_MARKERS: {
-				Utility.log("activity", "SYNC_CURRENT_IMAGE_MARKERS");
 				List<ImageMarker> imagemarkers = (List<ImageMarker>) msg.obj;
 				if(!imagemarkers.isEmpty()){
 					drawImageMarkers(imagemarkers);
@@ -95,7 +93,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			}
 				break;
 			case IPCMessages.UPDATE_NEW_LOCATION: {
-				Utility.log("activity", "update new location");
 				Location location = (Location) msg.obj;
 				onLocationChangedListener.onLocationChanged(location);
 				if (AntrackService.isSharingLocation()) {
@@ -320,10 +317,8 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			@Override
 			public void onClick(View v) {
 				String imagename = String.format("%1$d.jpg", System.currentTimeMillis());
-				Utility.log("camera", "imagename=" + imagename);
 				File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "AnTrack/" + preference.getString("token", ""));
 				dir.mkdirs();
-				Utility.log("camera", "path=" + dir.getAbsolutePath());
 				if (dir.exists() && dir.isDirectory()) {
 					File imagefile = new File(dir, imagename);
 					LatLng location = mapController.getLatestLocation();

@@ -21,9 +21,6 @@ public class TouchableWrapper extends FrameLayout {
 				//set callback to touch is true
 				twc.setIsTouched();
 				break;
-//			case MotionEvent.ACTION_UP:
-				//set callback to touch is false
-//				break;
 			}
 		}
 		return super.dispatchTouchEvent(ev);

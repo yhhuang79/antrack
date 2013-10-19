@@ -127,7 +127,6 @@ public class StatsUpdater {
 	}
 	
 	public void updateStats(TripStatictics tstats){
-		Utility.log("updater", tstats.getDistanceString());
 		if(canUpdate){
 			distance.setText(tstats.getDistanceString());
 		} else{

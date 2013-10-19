@@ -227,12 +227,10 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private void handleNewLocation(Location location) {
-		Utility.log(simpleName, "handleNewLocation");
 		//1. check validity of location
 		boolean toDisplay = shouldDisplayThisLocation(location);
 		//2. sharing or not, send location to activity if valid
 		if(toDisplay){
-			Utility.log(simpleName, "handleNewLocation: sending location");
 			sendLocationMessage(location);
 		}
 		//3. if sharing, save to db, upload, do stats
@@ -251,7 +249,6 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private boolean shouldDisplayThisLocation(Location location) {
-		Utility.log(simpleName, "shouldDisplayThisLocation");
 		boolean result = false;
 		if (Utility.isValidLocation(location)) {
 			if ((previousLocation == null) || !Utility.isWithinAccuracyBound(previousLocation, location)) {

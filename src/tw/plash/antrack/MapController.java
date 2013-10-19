@@ -4,17 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.location.Location;
-import android.media.ThumbnailUtils;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -86,7 +82,6 @@ public class MapController {
 		for(ImageMarker im : imagemarkers){
 			LatLng latlng = new LatLng(im.getLatitude(), im.getLongitude());
 			String path = im.getPath();
-			Utility.log("controller", path + ", " + latlng.toString());
 			new markerloader(latlng, path).execute();
 		}
 	}
