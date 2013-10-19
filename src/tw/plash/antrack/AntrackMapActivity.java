@@ -17,7 +17,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -49,12 +48,10 @@ import com.android.volley.VolleyError;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationChangeListener;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 
 public class AntrackMapActivity extends ActionBarActivity implements TabListener, TouchableWrapperCallback {
 	
@@ -294,7 +291,11 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			@Override
 			public void onClick(View v) {
 				fixToLocation = true;
-				mapController.centerAtMyLocation();
+				try{
+					mapController.centerAtMyLocation();
+				} catch(NullPointerException e){
+					Toast.makeText(AntrackMapActivity.this, "Waiting for location", Toast.LENGTH_SHORT).show();
+				}
 			}
 		});
 		

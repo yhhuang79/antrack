@@ -172,7 +172,8 @@ public class AntrackService extends Service implements LocationListener, Connect
 		locationRequest = LocationRequest.create();
 		locationRequest.setInterval(5000);
 		locationRequest.setFastestInterval(3000);
-		locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+//		locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+		locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 	}
 	
 	private void setupLocationClient() {

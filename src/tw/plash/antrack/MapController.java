@@ -118,7 +118,12 @@ public class MapController {
 	}
 	
 	synchronized public void centerAtMyLocation() {
-		animateToLocation(gmap.getMyLocation());
+		Location location = gmap.getMyLocation();
+		if(location != null){
+			animateToLocation(location);
+		} else{
+			throw new NullPointerException();
+		}
 	}
 	
 	synchronized public void moveToLocation(Location location){

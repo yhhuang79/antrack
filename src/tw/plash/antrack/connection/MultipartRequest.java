@@ -46,18 +46,14 @@ public class MultipartRequest extends Request<JSONObject> {
 		buildMultipartEntity();
 	}
 	
-	private void buildMultipartEntity() throws IOException{
+	private void buildMultipartEntity() throws IOException {
 		String path = filepart.getAbsolutePath();
-		Bitmap bitmap = Utility.getThumbnail(path, 150, 150);
-		int bytes = bitmap.getByteCount();
-		ByteBuffer buffer = ByteBuffer.allocate(bytes);
-		bitmap.copyPixelsToBuffer(buffer);
-//		bitmap.recycle();
-		byte[] ba = buffer.array();
-		ByteArrayBody bab = new ByteArrayBody(ba, path.substring(path.lastIndexOf("/") + 1));
-		ba = null;
+		Bitmap bitmap = Utility.getThumbnail(path, 256, 256);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		bitmap.compress(Bitmap.CompressFormat.PNG, 75, baos);
+		byte[] bytes = baos.toByteArray();
+		ByteArrayBody bab = new ByteArrayBody(bytes, path.substring(path.lastIndexOf("/") + 1));
 		entity.addPart("picture", bab);
-		bitmap.recycle();
 	}
 	
 	@Override
