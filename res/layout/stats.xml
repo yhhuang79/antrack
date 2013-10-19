@@ -25,7 +25,7 @@
                 android:layout_centerInParent="true"
                 android:layout_marginTop="40dip"
                 android:scaleType="fitCenter"
-                android:src="@drawable/actionbar_addfriend" />
+                android:src="@drawable/profile" />
 
             <View
                 android:id="@+id/centerline"
