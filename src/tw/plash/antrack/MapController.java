@@ -95,13 +95,13 @@ public class MapController {
 		}
 		@Override
 		protected Bitmap doInBackground(Void... params) {
-			return Utility.getThumbnail(path, 72, 72);
+			return Utility.getThumbnail(path, 72);
 		}
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			super.onPostExecute(result);
 			if(gmap != null){
-				gmap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(result)).position(latlng));
+				gmap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(result)).position(latlng).draggable(true));
 			}
 		}
 	}

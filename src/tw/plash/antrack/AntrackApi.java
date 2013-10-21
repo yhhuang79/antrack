@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import tw.plash.antrack.connection.EncodedRequest;
 import tw.plash.antrack.connection.MultipartRequest;
+import android.content.Context;
 import android.location.Location;
 import android.util.Log;
 
@@ -78,7 +79,7 @@ public class AntrackApi {
 		param.add(new BasicNameValuePair("location", array.toString()));
 		Log.w("tw.", "upload: " + param.toString());
 		EncodedRequest req = new EncodedRequest(url, param, listener, errorListener);
-		req.setRetryPolicy(new DefaultRetryPolicy(3000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+		req.setRetryPolicy(new DefaultRetryPolicy(3000, 10, 1.5f));
 		
 		return mResutstQueue.add(req);
 	}
@@ -99,7 +100,7 @@ public class AntrackApi {
 		MultipartRequest req = null;
 		try {
 			req = new MultipartRequest(url, param, file, listener, errorListener);
-			req.setRetryPolicy(new DefaultRetryPolicy(10000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+			req.setRetryPolicy(new DefaultRetryPolicy(10000, 10, 1.5f));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

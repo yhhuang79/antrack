@@ -67,6 +67,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 //	private ImageButton settings;
 	private ImageButton camera;
 	private Button controlButton;
+	private ImageButton share;
 	
 	private OnLocationChangedListener onLocationChangedListener;
 	
@@ -239,7 +240,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 				public void activate(OnLocationChangedListener listener) {
 					onLocationChangedListener = listener;
 				}
-				
 				@Override
 				public void deactivate() {
 					onLocationChangedListener = null;
@@ -253,7 +253,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 					}
 				}
 			});
-			
 			mapController = new MapController(googlemap);
 			break;
 		default:
@@ -304,6 +303,21 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 //			}
 //		});
 		
+		share = (ImageButton) findViewById(R.id.share);
+		if(AntrackService.isSharingLocation()){
+			share.setEnabled(true);
+			share.setBackgroundResource(R.color.action_button_state);
+		} else{
+			share.setEnabled(false);
+			share.setBackgroundResource(R.drawable.camerabuttoninactivebg);
+		}
+		share.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				showNotFirstTimeSharingDialog();
+			}
+		});
+		
 		camera = (ImageButton) findViewById(R.id.camera);
 		if(AntrackService.isSharingLocation()){
 			camera.setEnabled(true);
@@ -312,7 +326,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			camera.setEnabled(false);
 			camera.setBackgroundResource(R.drawable.camerabuttoninactivebg);
 		}
-		
 		camera.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -400,13 +413,20 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		localbroadcast(IPCMessages.LOCALBROADCAST_STOP_SHARING);
 		stopService(new Intent(AntrackMapActivity.this, AntrackService.class));
 		Toast.makeText(AntrackMapActivity.this, "Stop sharing", Toast.LENGTH_SHORT).show();
+		prepareButtonsToStop();
+		AntrackApp.getInstance(AntrackMapActivity.this).getStatsUpdater().stopSharing();
+		executeStopSharingConnection();
+	}
+	
+	private void prepareButtonsToStop(){
 		controlButton.setText(R.string.control_button_start);
 		controlButton.setBackgroundResource(R.color.action_button_state);
 		camera.setEnabled(false);
 		camera.setBackgroundResource(R.drawable.camerabuttoninactivebg);
-		AntrackApp.getInstance(AntrackMapActivity.this).getStatsUpdater().stopSharing();
-		executeStopSharingConnection();
+		share.setEnabled(false);
+		share.setBackgroundResource(R.drawable.camerabuttoninactivebg);
 	}
+	
 	
 	private void executeStopSharingConnection() {
 		String token = preference.getString("token", null);
@@ -478,24 +498,40 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		AntrackApp.getInstance(AntrackMapActivity.this).setFollowers(0);
 		preference.edit().putString("token", token).putString("url", url).commit();
 		mapController.clearMap();
-		controlButton.setText(R.string.control_button_stop);
-		controlButton.setBackgroundResource(R.color.action_button_state_on);
-		camera.setEnabled(true);
-		camera.setBackgroundResource(R.color.action_button_state);
+		prepareButtonsToStart();
 		Toast.makeText(AntrackMapActivity.this, "Start sharing", Toast.LENGTH_SHORT).show();
 		startService();
 		// use local broadcast to start sharing instead
 		localbroadcast(IPCMessages.LOCALBROADCAST_START_SHARING);
 		
-		// XXX show share action provider
+		showFirstTimeSharingDialog();
+	}
+	
+	private void prepareButtonsToStart(){
+		controlButton.setText(R.string.control_button_stop);
+		controlButton.setBackgroundResource(R.color.action_button_state_on);
+		camera.setEnabled(true);
+		camera.setBackgroundResource(R.color.action_button_state);
+		share.setEnabled(true);
+		share.setBackgroundResource(R.color.action_button_state);
+	}
+	
+	private void showFirstTimeSharingDialog(){
+		showSharingSelector("Share via...");
+	}
+	
+	private void showNotFirstTimeSharingDialog(){
+		showSharingSelector("Share again via...");
+	}
+	
+	private void showSharingSelector(String title){
 		Intent sendIntent = new Intent();
 		sendIntent.setAction(Intent.ACTION_SEND);
 		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
 		sendIntent.putExtra(Intent.EXTRA_TEXT,
-		"Click on the link to follow my lead..." + preference.getString("url", ""));
+		"Click on the link to follow my lead " + preference.getString("url", ""));
 		sendIntent.setType("text/plain");
-		startActivity(Intent.createChooser(sendIntent, "Share via..."));
-		
+		startActivity(Intent.createChooser(sendIntent, title));
 	}
 	
 	private void showErrorMessage() {

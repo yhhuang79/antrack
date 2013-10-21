@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
@@ -16,6 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import tw.plash.antrack.Utility;
+import android.content.Context;
 import android.graphics.Bitmap;
 
 import com.android.volley.AuthFailureError;
@@ -48,9 +48,9 @@ public class MultipartRequest extends Request<JSONObject> {
 	
 	private void buildMultipartEntity() throws IOException {
 		String path = filepart.getAbsolutePath();
-		Bitmap bitmap = Utility.getThumbnail(path, 256, 256);
+		Bitmap bitmap = Utility.getThumbnail(path, 1024);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		bitmap.compress(Bitmap.CompressFormat.PNG, 75, baos);
+		bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
 		byte[] bytes = baos.toByteArray();
 		ByteArrayBody bab = new ByteArrayBody(bytes, path.substring(path.lastIndexOf("/") + 1));
 		entity.addPart("picture", bab);

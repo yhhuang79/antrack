@@ -1,5 +1,6 @@
 package tw.plash.antrack;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -10,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -23,9 +25,12 @@ import android.media.ExifInterface;
 import android.media.ThumbnailUtils;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Debug;
 import android.util.Log;
 
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
+import com.squareup.picasso.Picasso;
 
 /**
  * Methods for bit manipulation.
@@ -323,13 +328,28 @@ public class Utility {
 		}
 	}
 	
-	public static Bitmap getThumbnail(String path, int width, int height){
+//	public static Bitmap getThumbnail(Context context, String path, int size){
+//		Bitmap bitmap = null;
+//		try {
+//			bitmap = Picasso.with(context).load(new File(path)).centerCrop().resize(size, size).get();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		return bitmap;
+//	}
+	
+	public static void getAsyncThumbnail(GoogleMap gmap, String path){
+		
+	}
+	
+	public static Bitmap getThumbnail(String path, int targetLongEdge){
+		logHeap();
 		System.gc();
-		int inWidth = 0;
-		int inHeight = 0;
+		int inLongEdge = 0;
+		int inShortEdge = 0;
 		
 		InputStream in;
-		Bitmap bitmap = null;
+		Bitmap finalBitmap = null;
 		try {
 			in = new FileInputStream(path);
 			// decode image size (decode metadata only, not the whole image)
@@ -340,25 +360,119 @@ public class Utility {
 			in = null;
 			System.gc();
 			// save width and height
-			inWidth = options.outWidth;
-			inHeight = options.outHeight;
+			float rotation = getPictureRotation(path);
+			Log.e("tw.", "getthumbnail, target size=" + targetLongEdge);
+			boolean longIsWidth;
+			if(options.outWidth > options.outHeight){
+				Log.e("tw.", "getthumbnail, (" + options.outWidth + ", " + options.outHeight + ")");
+				longIsWidth = true;
+				inLongEdge = options.outWidth;
+				inShortEdge = options.outHeight;
+			} else{
+				Log.e("tw.", "getthumbnail, (" + options.outWidth + ", " + options.outHeight + ")");
+				longIsWidth = false;
+				inShortEdge = options.outWidth;
+				inLongEdge = options.outHeight;
+			}
+			logHeap();
+			int desiredLongEdge = targetLongEdge;
+			int desiredShortEdge = Math.round(((float)targetLongEdge) * ((float)inShortEdge / (float)inLongEdge));
 			
 			// decode full image pre-resized
 			in = new FileInputStream(path);
 			options = new BitmapFactory.Options();
 			// calc rought re-size (this is no exact resize)
-			options.inSampleSize = Math.max(inWidth / width, inHeight / height);
+			//we want to scale down until the longer edge is around 1000 pixels
+			options.inSampleSize = Math.round(inLongEdge / desiredLongEdge);
 			// decode full image
-			bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeStream(in, null, options), width, height);
+			
+			Bitmap tmpBitmap = BitmapFactory.decodeStream(in, null, options);
+			Log.e("tw.", "getthumbnail, bitmap tmp size (" + tmpBitmap.getWidth() + ", " + tmpBitmap.getHeight() + ")");
+			Bitmap preRotationBitmap;
+			if(longIsWidth){
+				preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredLongEdge, desiredShortEdge);
+			} else{
+				preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredShortEdge, desiredLongEdge);
+			}
+//			tmpBitmap.recycle();
+			
+			Matrix matrix = new Matrix();
+			matrix.postRotate(rotation);
+			finalBitmap = Bitmap.createBitmap(preRotationBitmap, 0, 0, preRotationBitmap.getWidth(), preRotationBitmap.getHeight(), matrix, false);
+//			preRotationBitmap.recycle();
+			
 			System.gc();
+			logHeap();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		Log.e("tw.", "getthumbnail, bitmap final size (" + finalBitmap.getWidth() + ", " + finalBitmap.getHeight() + ")");
 		//i mean...why not? the more the better...
 		System.gc();
-		return bitmap;
+		logHeap();
+		return finalBitmap;
+	}
+	
+	private static float getPictureRotation(String path) {
+		ExifInterface exif = null;
+		float rotation = 0;
+		try {
+			exif = new ExifInterface(path);
+			switch(Integer.valueOf(exif.getAttribute(ExifInterface.TAG_ORIENTATION))){
+			case ExifInterface.ORIENTATION_NORMAL:
+				
+				break;
+			case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+				
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_180:
+				rotation = 180;
+				break;
+			case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+				
+				break;
+			case ExifInterface.ORIENTATION_TRANSPOSE:
+				
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_90:
+				rotation = 90;
+				break;
+			case ExifInterface.ORIENTATION_TRANSVERSE:
+				
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_270:
+				rotation = 270;
+				break;
+			case ExifInterface.ORIENTATION_UNDEFINED:
+			default:
+				
+				break;
+			}
+			Log.e("tw.", "orientation:" + exif.getAttribute(ExifInterface.TAG_ORIENTATION));
+		} catch (IOException e) {
+			Log.e("tw.ExifEditor Error", "input path: " + path);
+			e.printStackTrace();
+		}
+		return rotation;
+	}
+	
+	public static void logHeap() {
+		Double allocated = Double.valueOf(Debug.getNativeHeapAllocatedSize()) / Double.valueOf((1048576));
+		Double available = Double.valueOf(Debug.getNativeHeapSize()) / 1048576.0;
+		Double free = Double.valueOf(Debug.getNativeHeapFreeSize()) / 1048576.0;
+		DecimalFormat df = new DecimalFormat();
+		df.setMaximumFractionDigits(2);
+		df.setMinimumFractionDigits(2);
+		
+		Log.w("tw.", "debug. =================================");
+		Log.w("tw.", "debug.heap native: allocated " + df.format(allocated) + "MB of " + df.format(available) + "MB ("
+				+ df.format(free) + "MB free)");
+		Log.w("tw.",
+				"debug.memory: allocated: " + df.format(Double.valueOf(Runtime.getRuntime().totalMemory() / 1048576))
+						+ "MB of " + df.format(Double.valueOf(Runtime.getRuntime().maxMemory() / 1048576)) + "MB ("
+						+ df.format(Double.valueOf(Runtime.getRuntime().freeMemory() / 1048576)) + "MB free)");
 	}
 	
 	public static void resizeBitmap(String inputPath, String outputPath, int desiredWidth, int desiredHeight) {
