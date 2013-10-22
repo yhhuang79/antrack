@@ -328,20 +328,6 @@ public class Utility {
 		}
 	}
 	
-//	public static Bitmap getThumbnail(Context context, String path, int size){
-//		Bitmap bitmap = null;
-//		try {
-//			bitmap = Picasso.with(context).load(new File(path)).centerCrop().resize(size, size).get();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//		return bitmap;
-//	}
-	
-	public static void getAsyncThumbnail(GoogleMap gmap, String path){
-		
-	}
-	
 	public static Bitmap getThumbnail(String path, int targetLongEdge){
 		logHeap();
 		System.gc();
@@ -380,29 +366,40 @@ public class Utility {
 			
 			// decode full image pre-resized
 			in = new FileInputStream(path);
-			options = new BitmapFactory.Options();
-			// calc rought re-size (this is no exact resize)
-			//we want to scale down until the longer edge is around 1000 pixels
-			options.inSampleSize = Math.round(inLongEdge / desiredLongEdge);
-			// decode full image
 			
-			Bitmap tmpBitmap = BitmapFactory.decodeStream(in, null, options);
-			Log.e("tw.", "getthumbnail, bitmap tmp size (" + tmpBitmap.getWidth() + ", " + tmpBitmap.getHeight() + ")");
-			Bitmap preRotationBitmap;
-			if(longIsWidth){
-				preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredLongEdge, desiredShortEdge);
-			} else{
-				preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredShortEdge, desiredLongEdge);
+			if(targetLongEdge > inLongEdge){
+				//picture already smaller than target size, no need to resize
+				// decode full image
+				Bitmap preRotationBitmap = BitmapFactory.decodeStream(in);
+				
+				Matrix matrix = new Matrix();
+				matrix.postRotate(rotation);
+				finalBitmap = Bitmap.createBitmap(preRotationBitmap, 0, 0, preRotationBitmap.getWidth(), preRotationBitmap.getHeight(), matrix, false);
+				
+				System.gc();
+				logHeap();
+			} else {
+				options = new BitmapFactory.Options();
+				// calc rought re-size (this is no exact resize)
+				//we want to scale down until the longer edge is around 1000 pixels
+				options.inSampleSize = Math.round(inLongEdge / desiredLongEdge);
+				// decode full image
+				Bitmap tmpBitmap = BitmapFactory.decodeStream(in, null, options);
+				Log.e("tw.", "getthumbnail, bitmap tmp size (" + tmpBitmap.getWidth() + ", " + tmpBitmap.getHeight() + ")");
+				Bitmap preRotationBitmap;
+				if(longIsWidth){
+					preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredLongEdge, desiredShortEdge);
+				} else{
+					preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredShortEdge, desiredLongEdge);
+				}
+				
+				Matrix matrix = new Matrix();
+				matrix.postRotate(rotation);
+				finalBitmap = Bitmap.createBitmap(preRotationBitmap, 0, 0, preRotationBitmap.getWidth(), preRotationBitmap.getHeight(), matrix, false);
+				
+				System.gc();
+				logHeap();
 			}
-//			tmpBitmap.recycle();
-			
-			Matrix matrix = new Matrix();
-			matrix.postRotate(rotation);
-			finalBitmap = Bitmap.createBitmap(preRotationBitmap, 0, 0, preRotationBitmap.getWidth(), preRotationBitmap.getHeight(), matrix, false);
-//			preRotationBitmap.recycle();
-			
-			System.gc();
-			logHeap();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
