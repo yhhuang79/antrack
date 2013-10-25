@@ -36,7 +36,7 @@ public class StatsUpdater {
 			Stats stats = AntrackApp.getInstance(mContext).getDbhelper().getStats();
 			startTime.setText(stats.getStarttime());
 			duration.setBase(stats.getDurationbase());
-			numberOfPhotos.setText(String.valueOf(AntrackApp.getInstance(mContext).getImagePaths().size()));
+			numberOfPhotos.setText(String.valueOf(AntrackApp.getInstance(mContext).getDbhelper().getNumberOfImageMarkers()));
 			distance.setText(stats.getDistance());
 			duration.start();
 			followers.setText(AntrackApp.getInstance(mContext).getFollowers() + " followers");
@@ -46,7 +46,7 @@ public class StatsUpdater {
 			Stats stats = AntrackApp.getInstance(mContext).getDbhelper().getStats();
 			startTime.setText(stats.getStarttime());
 			duration.setText(stats.getDuration());
-			numberOfPhotos.setText(String.valueOf(AntrackApp.getInstance(mContext).getImagePaths().size()));
+			numberOfPhotos.setText(String.valueOf(AntrackApp.getInstance(mContext).getDbhelper().getNumberOfImageMarkers()));
 			followers.setText(AntrackApp.getInstance(mContext).getFollowers() + " followers");
 			distance.setText(stats.getDistance());
 		}

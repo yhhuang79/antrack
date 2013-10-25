@@ -26,9 +26,9 @@ public class PhotoFragment extends Fragment {
 	@Override
 	public void onResume() {
 		super.onResume();
-		List<String> globalImagePaths = AntrackApp.getInstance(getActivity()).getImagePaths();
+		List<ImageMarker> imageMarkers = AntrackApp.getInstance(getActivity()).getDbhelper().getImageMarkers();
 		// there are new images to be shown
-		PhotosAdapter adapter = new PhotosAdapter(getActivity(), globalImagePaths);
+		PhotosAdapter adapter = new PhotosAdapter(getActivity(), imageMarkers);
 		gridview.setAdapter(adapter);
 		gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override

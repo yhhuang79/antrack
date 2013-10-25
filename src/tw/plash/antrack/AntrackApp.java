@@ -26,18 +26,16 @@ public class AntrackApp {
 	private AntrackApi mApi;
 	private RequestQueue queue;
 	private DBHelper dbhelper;
-	private List<String> imagepaths;
 	private StatsUpdater statsUpdater;
-	private ImageMarker imagemarkerholder;
 	private int followers;
+	private Context context;
 	
 	private AntrackApp(Context context) {
+		this.context = context;
 		queue = Volley.newRequestQueue(context, new HurlStack(null, getSSLSocketFactory(), DO_NOT_VERIFY));
 		mApi = new AntrackApi(queue);
 		dbhelper = new DBHelper(context);
-		imagepaths = new ArrayList<String>();
 		statsUpdater = new StatsUpdater();
-		imagemarkerholder = null;
 		followers = 0;
 	}
 	
@@ -51,34 +49,6 @@ public class AntrackApp {
 	
 	public StatsUpdater getStatsUpdater(){
 		return statsUpdater;
-	}
-	
-	public void setImageMarker(ImageMarker im){
-		imagemarkerholder = im;
-	}
-	
-	public ImageMarker getImageMarker(){
-		return imagemarkerholder;
-	}
-	
-	public void commitImageMarker(){
-		Utility.log("singleton", imagemarkerholder.getPath() + ", " + imagemarkerholder.getLatitude() + ", " + imagemarkerholder.getLongitude());
-		dbhelper.insertImageMarker(imagemarkerholder);
-		imagemarkerholder = null;
-	}
-	
-	public void resetImagePaths(){
-		imagepaths.clear();
-	}
-	
-	public void addImagePath(String path){
-		if(!imagepaths.contains(path)){
-			imagepaths.add(path);
-		}
-	}
-	
-	public List<String> getImagePaths(){
-		return imagepaths;
 	}
 	
 	public void setFollowers(int num){
@@ -96,7 +66,7 @@ public class AntrackApp {
 		return instance;
 	}
 	
-	public void cancelAll(Context context){
+	public void cancelAll(){
 		queue.cancelAll(context);
 	}
 	

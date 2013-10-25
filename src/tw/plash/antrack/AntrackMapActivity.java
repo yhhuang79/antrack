@@ -37,6 +37,7 @@ import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -329,29 +330,24 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		camera.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				Log.e("tw.map", "camera click");
 				String imagename = String.format("%1$d.jpg", System.currentTimeMillis());
 				File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "AnTrack/" + preference.getString("token", ""));
 				dir.mkdirs();
 				if (dir.exists() && dir.isDirectory()) {
 					File imagefile = new File(dir, imagename);
-					LatLng location = mapController.getLatestLocation();
-					if(location != null){
-						ImageMarker im = new ImageMarker();
-						im.setLatitude(location.latitude);
-						im.setLongitude(location.longitude);
-						im.setPath(imagefile.getAbsolutePath());
-						AntrackApp.getInstance(AntrackMapActivity.this).setImageMarker(im);
-						preference.edit().putString("imagepath", imagefile.getAbsolutePath())
-						.commit();
+					if(mapController.hasLocation()){
+						//use local broadcast to send file path to service
+						int requestCode = generateNewRequestCode();
+						String fullpath = imagefile.getAbsolutePath();
+						notifyNewImageCreation(fullpath, requestCode);
+						
 						Uri imageUri = Uri.fromFile(imagefile);
 						// intent to launch Android camera app to take pictures
 						Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 						// input the desired filepath + filename
 						intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-						// launch the intent with code
-						// startActivityForResult(intent,
-						// REQUEST_CODE_TAKE_PICTURE);
-						startActivityForResult(intent, 12345);
+						startActivityForResult(intent, requestCode);
 					} else{
 						Toast.makeText(AntrackMapActivity.this, "Waiting for location", Toast.LENGTH_SHORT).show();
 					}
@@ -362,55 +358,64 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		});
 	}
 	
+	private int generateNewRequestCode(){
+		long seed = System.currentTimeMillis();
+		int code = (int) (seed % Constants.MAX_INT);
+		Log.e("tw.map", "new reuqest code= " + code);
+		return code;
+	}
+	
+	private void notifyNewImageCreation(String path, int code){
+		Intent intent = new Intent(IPCMessages.LB_IMAGE_CREATE);
+		intent.putExtra(IPCMessages.LB_EXTRA_IMAGE_PATH, path);
+		intent.putExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, code);
+		LocalBroadcastManager.getInstance(AntrackMapActivity.this).sendBroadcast(intent);
+	}
+	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		switch(requestCode){
-		case 12345:
-			switch(resultCode){
-			case RESULT_OK:
-				//let service do the work...
-				String path = preference.getString("imagepath", null);
-				AntrackApp.getInstance(AntrackMapActivity.this).addImagePath(path);
-				ImageMarker im = AntrackApp.getInstance(AntrackMapActivity.this).getImageMarker();
-				AntrackApp.getInstance(AntrackMapActivity.this).commitImageMarker();
-				try {
-					AntrackApp.getInstance(AntrackMapActivity.this).getApi()
-						.uploadImage(preference.getString("token", null), im, new Listener<JSONObject>() {
-							@Override
-							public void onResponse(JSONObject arg0) {
-							}
-						}, new ErrorListener() {
-							@Override
-							public void onErrorResponse(VolleyError arg0) {
-							}
-						}
-					);
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
-				break;
-			case RESULT_FIRST_USER:
-			case RESULT_CANCELED:
-			default:
-				break;
-			}
+		Log.e("tw.map", "onactivity result, request code= " + requestCode);
+		switch(resultCode){
+		case RESULT_OK:
+			notifyNewImageConfirmation(requestCode);
+			Toast.makeText(AntrackMapActivity.this, "New picture added", Toast.LENGTH_SHORT).show();
+			break;
+		case RESULT_CANCELED:
+		case RESULT_FIRST_USER:
+		default:
+			notifyNewImageCancellation(requestCode);
+			Toast.makeText(AntrackMapActivity.this, "No picture taken", Toast.LENGTH_SHORT).show();
 			break;
 		}
 	}
 	
+	private void notifyNewImageConfirmation(int code){
+		Intent intent = new Intent(IPCMessages.LB_IMAGE_CONFIRM);
+		intent.putExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, code);
+		LocalBroadcastManager.getInstance(AntrackMapActivity.this).sendBroadcast(intent);
+	}
+	
+	private void notifyNewImageCancellation(int code){
+		Intent intent = new Intent(IPCMessages.LB_IMAGE_CANCEL);
+		intent.putExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, code);
+		LocalBroadcastManager.getInstance(AntrackMapActivity.this).sendBroadcast(intent);
+	}
+	
 	private void showConfirmStopSharingDialog() {
-		new AlertDialog.Builder(AntrackMapActivity.this).setMessage("Are you sure you want to stop sharing?")
-				.setPositiveButton("yes", new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						prepareToStopSharing();
-					}
-				}).setNegativeButton("no", null).show();
+		new AlertDialog.Builder(AntrackMapActivity.this)
+			.setMessage("Are you sure you want to stop sharing?")
+			.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					prepareToStopSharing();
+				}
+			})
+			.setNegativeButton("no", null).show();
 	}
 	
 	private void prepareToStopSharing() {
 		mapController.drawEndMarker();
-		localbroadcast(IPCMessages.LOCALBROADCAST_STOP_SHARING);
+		sendLocalBroadcast(IPCMessages.LB_STOP_SHARING);
 		stopService(new Intent(AntrackMapActivity.this, AntrackService.class));
 		Toast.makeText(AntrackMapActivity.this, "Stop sharing", Toast.LENGTH_SHORT).show();
 		prepareButtonsToStop();
@@ -431,18 +436,20 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	private void executeStopSharingConnection() {
 		String token = preference.getString("token", null);
 		String timestamp = new Timestamp(new Date().getTime()).toString();
-		AntrackApp.getInstance(AntrackMapActivity.this).getApi().stop(token, timestamp, new Listener<JSONObject>() {
-			@Override
-			public void onResponse(JSONObject arg0) {
+		AntrackApp.getInstance(AntrackMapActivity.this).getApi()
+			.stop(token, timestamp, new Listener<JSONObject>() {
+				@Override
+				public void onResponse(JSONObject arg0) {
+				}
+			}, new ErrorListener() {
+				@Override
+				public void onErrorResponse(VolleyError arg0) {
+				}
 			}
-		}, new ErrorListener() {
-			@Override
-			public void onErrorResponse(VolleyError arg0) {
-			}
-		});
+		);
 	}
 	
-	private void localbroadcast(String action) {
+	private void sendLocalBroadcast(String action) {
 		Intent intent = new Intent(action);
 		LocalBroadcastManager.getInstance(AntrackMapActivity.this).sendBroadcast(intent);
 	}
@@ -461,39 +468,39 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			diag.setCanceledOnTouchOutside(false);
 			diag.show();
 			AntrackApp.getInstance(AntrackMapActivity.this).getApi()
-					.initialize(uuid, username, timestamp, new Listener<JSONObject>() {
-						@Override
-						public void onResponse(JSONObject obj) {
-							// parse the jsonobject returned from server
-							// init share action intent
-							diag.dismiss();
-							try {
-								if (obj.getInt("status_code") == 200) {
-									String token = obj.getString("token");
-									String url = obj.getString("url");
-									prepareToStartSharing(token, url);
-								} else {
-									showErrorMessage();
-								}
-							} catch (JSONException e) {
-								e.printStackTrace();
+				.initialize(uuid, username, timestamp, new Listener<JSONObject>() {
+					@Override
+					public void onResponse(JSONObject obj) {
+						// parse the jsonobject returned from server
+						// init share action intent
+						diag.dismiss();
+						try {
+							if (obj.getInt("status_code") == 200) {
+								String token = obj.getString("token");
+								String url = obj.getString("url");
+								prepareToStartSharing(token, url);
+							} else {
 								showErrorMessage();
 							}
-						}
-					}, new ErrorListener() {
-						@Override
-						public void onErrorResponse(VolleyError arg0) {
-							diag.dismiss();
-							// let user know there is a error, try again later
-							Utility.log(arg0.toString());
+						} catch (JSONException e) {
+							e.printStackTrace();
 							showErrorMessage();
 						}
-					});
+					}
+				}, new ErrorListener() {
+					@Override
+					public void onErrorResponse(VolleyError arg0) {
+						diag.dismiss();
+						// let user know there is a error, try again later
+						Utility.log(arg0.toString());
+						showErrorMessage();
+					}
+				}
+			);
 		}
 	}
 	
 	private void prepareToStartSharing(String token, String url) {
-		AntrackApp.getInstance(AntrackMapActivity.this).resetImagePaths();
 		AntrackApp.getInstance(AntrackMapActivity.this).getStatsUpdater().startSharing(System.currentTimeMillis(), SystemClock.elapsedRealtime());
 		AntrackApp.getInstance(AntrackMapActivity.this).setFollowers(0);
 		preference.edit().putString("token", token).putString("url", url).commit();
@@ -502,7 +509,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		Toast.makeText(AntrackMapActivity.this, "Start sharing", Toast.LENGTH_SHORT).show();
 		startService();
 		// use local broadcast to start sharing instead
-		localbroadcast(IPCMessages.LOCALBROADCAST_START_SHARING);
+		sendLocalBroadcast(IPCMessages.LB_START_SHARING);
 		
 		showFirstTimeSharingDialog();
 	}
@@ -543,6 +550,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	@Override
 	protected void onResume() {
 		super.onResume();
+		Log.e("tw.map", "onResume");
 		// retrieve shared preference
 		getPreferences();
 		bindToService();
@@ -568,12 +576,13 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	@Override
 	protected void onPause() {
 		super.onPause();
+		Log.e("tw.map", "onPause");
 		unbindFromService();
 		// save shared preference
 		savePreferences();
 		// cancal all pending or ongoing connections if not sharing
 		if (!AntrackService.isSharingLocation()) {
-			AntrackApp.getInstance(AntrackMapActivity.this).cancelAll(AntrackMapActivity.this);
+			AntrackApp.getInstance(AntrackMapActivity.this).cancelAll();
 		}
 	}
 	

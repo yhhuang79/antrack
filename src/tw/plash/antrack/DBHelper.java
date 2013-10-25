@@ -10,13 +10,14 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteStatement;
 import android.location.Location;
 import android.webkit.WebChromeClient.CustomViewCallback;
 
 public class DBHelper {
 	
 	private static final String DATABASE_NAME = "antrack";
-	private static final int DATABASE_VERSION = 6;
+	private static final int DATABASE_VERSION = 8;
 	private static final String CURRENT_TRIP_TABLE = "currenttriptable";
 	private static final String IMAGES_TABLE = "imagestable";
 	private static final String STATS_TABLE = "statstable";
@@ -41,7 +42,9 @@ public class DBHelper {
 			+ "latitude REAL, "
 			+ "longitude REAL, "
 			+ "time INTEGER, "
-			+ "path TEXT)";
+			+ "path TEXT, "
+			+ "code INTEGER UNIQUE, "
+			+ "state INTEGER)";
 	
 	private static final String CREATE_TABLE_STATS = "CREATE TABLE " + STATS_TABLE
 			+ "(id INTEGER PRIMARY KEY, "
@@ -91,7 +94,7 @@ public class DBHelper {
 	
 	
 	
-	synchronized public long insert(Location location, boolean toDisplay) {
+	synchronized public long insertLocation(Location location, boolean toDisplay) {
 		if (db.isOpen()) {
 			ContentValues cv = new ContentValues();
 			cv.put("latitude", location.getLatitude());
@@ -127,17 +130,73 @@ public class DBHelper {
 		return locations;
 	}
 	
-	synchronized public long insertImageMarker(ImageMarker im){
+	synchronized public long insertImageMarkerPath(int code, String path){
 		if (db.isOpen()) {
 			ContentValues cv = new ContentValues();
-			cv.put("latitude", im.getLatitude());
-			cv.put("longitude", im.getLongitude());
-			cv.put("time", im.getTime());
-			cv.put("path", im.getPath());
+			cv.put("path", path);
+			cv.put("code", code);
+			cv.put("state", Constants.IMAGE_MARKER_STATE.INCOMPLETE.ordinal());
 			return db.insert(IMAGES_TABLE, null, cv);
 		} else {
 			return ERROR_DB_IS_CLOSED;
 		}
+	}
+	
+	synchronized public int insertImageMarkerLocation(int code, Location location){
+		if (db.isOpen()) {
+			ContentValues cv = new ContentValues();
+			cv.put("latitude", location.getLatitude());
+			cv.put("longitude", location.getLongitude());
+			cv.put("time", System.currentTimeMillis()); //XXX
+			cv.put("state", Constants.IMAGE_MARKER_STATE.PENDING_UPLOAD.ordinal());
+			return db.update(IMAGES_TABLE, cv, "code = " + code, null);
+		} else {
+			return ERROR_DB_IS_CLOSED;
+		}
+	}
+	
+	synchronized public int setImageMarkerState(int code, Constants.IMAGE_MARKER_STATE state){
+		if (db.isOpen()) {
+			ContentValues cv = new ContentValues();
+			cv.put("state", state.ordinal());
+			return db.update(IMAGES_TABLE, cv, "code = " + code, null);
+		} else {
+			return ERROR_DB_IS_CLOSED;
+		}
+	}
+	
+	synchronized public ImageMarker getPendingUploadImageMarker(){
+		if(db.isOpen()){
+			ImageMarker imageMarker = new ImageMarker();
+			int code = -1;
+			Cursor cursor = db.query(IMAGES_TABLE, null, "state = " + Constants.IMAGE_MARKER_STATE.PENDING_UPLOAD.ordinal(), null, null, null, "id ASC");
+			if (cursor.moveToFirst()) {
+				imageMarker.setLatitude(cursor.getDouble(cursor.getColumnIndex("latitude")));
+				imageMarker.setLongitude(cursor.getDouble(cursor.getColumnIndex("longitude")));
+				imageMarker.setTime(cursor.getLong(cursor.getColumnIndex("time")));
+				imageMarker.setPath(cursor.getString(cursor.getColumnIndex("path")));
+				code = cursor.getInt(cursor.getColumnIndex("code"));
+				imageMarker.setCode(code);
+				//also change the state to upload in progress to avoid duplicate upload
+//				setImageMarkerState(code, Constants.IMAGE_MARKER_STATE.UPLOAD_IN_PROGRESS); XXX
+				cursor.close();
+				return imageMarker;
+			} else{
+				return null;
+			}
+		}
+		return null;
+	}
+	
+	synchronized public long getNumberOfImageMarkers(){
+		String sql = "SELECT COUNT(id) FROM " + IMAGES_TABLE;
+		if (db.isOpen()) {
+			SQLiteStatement statement = db.compileStatement(sql);
+			long result = statement.simpleQueryForLong();
+			statement.close();
+			return result;
+		}
+		return 0;
 	}
 	
 	synchronized public List<ImageMarker> getImageMarkers(){
@@ -198,6 +257,13 @@ public class DBHelper {
 		if(db.isOpen()){
 			db.delete(STATS_TABLE, null, null);
 		}
+	}
+	
+	synchronized public int removeImageMarker(int code){
+		if(db.isOpen()){
+			return db.delete(IMAGES_TABLE, "code = " + code, null);
+		}
+		return ERROR_DB_IS_CLOSED;
 	}
 	
 	public boolean isDBOpen() {

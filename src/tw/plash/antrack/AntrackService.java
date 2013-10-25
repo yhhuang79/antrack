@@ -22,6 +22,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.android.volley.Response;
 import com.android.volley.Response.Listener;
@@ -36,8 +37,6 @@ import com.google.android.gms.location.LocationRequest;
 public class AntrackService extends Service implements LocationListener, ConnectionCallbacks,
 		OnConnectionFailedListener {
 	
-	private final String simpleName = "AntrackService";
-	
 	private static boolean serviceIsSharing = false;
 	
 	private LocationClient locationClient;
@@ -46,21 +45,108 @@ public class AntrackService extends Service implements LocationListener, Connect
 	private Location previousLocation;
 	
 	private TripStatictics stats;
+	private boolean uploadTaskIsRunning;
+	private boolean canKeepRunning;
+	
+	private Handler mHandler;
+	private Runnable uploadImageTask = new Runnable() {
+		@Override
+		public void run() {
+			Log.e("tw.uploadImageTask", "start");
+			//get one marker and try upload
+			ImageMarker imageMarker = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getPendingUploadImageMarker();
+			if(imageMarker != null){
+				final int code = imageMarker.getCode();
+				AntrackApp.getInstance(getApplicationContext()).getApi()
+				.uploadImage(preference.getString("token", null), imageMarker, new Listener<JSONObject>() {
+					@Override
+					public void onResponse(JSONObject obj) {
+						Log.e("tw.uploadImageTask", "upload image response " + obj.toString());
+						try {
+							if(obj.getInt(Constants.API_RES_KEY_STATUS_CODE) == 200){
+								//mark as uploaded
+								AntrackApp.getInstance(getApplicationContext()).getDbhelper().setImageMarkerState(code, Constants.IMAGE_MARKER_STATE.DONE);
+							}
+						} catch (JSONException e) {
+							e.printStackTrace();
+						} finally{
+							//do it hare to succeed both try and catch block
+							startAgain();
+						}
+						Log.e("tw.uploadImageTask", "upload image response done");
+					}
+				}, new Response.ErrorListener() {
+					@Override
+					public void onErrorResponse(VolleyError error) {
+						Log.e("tw.uploadImageTask", "upload image response: error= " + error.toString());
+						startAgain();
+					}
+				});
+			} else{
+				uploadTaskIsRunning = false;
+			}
+		}
+		
+		private void startAgain(){
+			Log.e("tw.uploadImageTask", "start again");
+			if(canKeepRunning){
+				uploadTaskIsRunning = true;
+				mHandler.postDelayed(uploadImageTask, 1000);
+				Log.e("tw.uploadImageTask", "start again delayed");
+			} else{
+				uploadTaskIsRunning = false;
+			}
+		}
+	};
 	
 	private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
-			if(action.equals(IPCMessages.LOCALBROADCAST_START_SHARING)){
+			if(action.equals(IPCMessages.LB_START_SHARING)){
 				prepareToStartSharing();
-			} else if(action.equals(IPCMessages.LOCALBROADCAST_STOP_SHARING)){
+			} else if(action.equals(IPCMessages.LB_STOP_SHARING)){
 				prepareToStopSharing();
+			} else if(action.equals(IPCMessages.LB_IMAGE_CREATE)){
+				String path = intent.getStringExtra(IPCMessages.LB_EXTRA_IMAGE_PATH);
+				int code = intent.getIntExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, -1);
+				if(code >= 0){
+					long result = AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertImageMarkerPath(code, path);
+					Log.d("tw.service", "added image marker path into DB row no." + result);
+				} else{
+					Log.e("tw.service", "received invalid code: " + code + " at image creation");
+				}
+			} else if(action.equals(IPCMessages.LB_IMAGE_CONFIRM)){
+				int code = intent.getIntExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, -1);
+				if(code >= 0){
+					int result = AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertImageMarkerLocation(code, previousLocation);
+					Log.d("tw.service", "added " + result + " image marker location(s) into DB");
+					if(uploadTaskIsRunning){
+						//do nothing
+					} else{
+						//start a new thread and start upload
+						uploadTaskIsRunning = true;
+						mHandler.post(uploadImageTask);
+					}
+				} else{
+					Log.e("tw.service", "received invalid code: " + code + " at image confirmation");
+				}
+			} else if(action.equals(IPCMessages.LB_IMAGE_CANCEL)){
+				int code = intent.getIntExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, -1);
+				if(code >= 0){
+					//remove it from DB
+					int result = AntrackApp.getInstance(getApplicationContext()).getDbhelper().removeImageMarker(code);
+					//result should be 1, if not, something is wrong
+					Log.d("tw.service", "removed " + result + " image marker entries from DB");
+				} else{
+					Log.e("tw.service", "received invalid code: " + code + " at image cancellation");
+				}
 			}
 		}
 	};
 	
 	private Messenger mLocationSender;
-	final Messenger mReceiver = new Messenger(new IncomingHandler());
+	private final Messenger mReceiver = new Messenger(new IncomingHandler());
 	
 	private class IncomingHandler extends Handler {
 		@Override
@@ -153,6 +239,10 @@ public class AntrackService extends Service implements LocationListener, Connect
 	public void onCreate() {
 		super.onCreate();
 		
+		mHandler = new Handler();
+		uploadTaskIsRunning = false;
+		canKeepRunning = true;
+		
 		setupLocationRequest();
 		setupLocationClient();
 		
@@ -163,8 +253,11 @@ public class AntrackService extends Service implements LocationListener, Connect
 		stats = new TripStatictics();
 		
 		IntentFilter filter = new IntentFilter();
-		filter.addAction(IPCMessages.LOCALBROADCAST_START_SHARING);
-		filter.addAction(IPCMessages.LOCALBROADCAST_STOP_SHARING);
+		filter.addAction(IPCMessages.LB_START_SHARING);
+		filter.addAction(IPCMessages.LB_STOP_SHARING);
+		filter.addAction(IPCMessages.LB_IMAGE_CREATE);
+		filter.addAction(IPCMessages.LB_IMAGE_CONFIRM);
+		filter.addAction(IPCMessages.LB_IMAGE_CANCEL);
 		LocalBroadcastManager.getInstance(AntrackService.this).registerReceiver(mBroadcastReceiver, filter);
 	}
 	
@@ -192,6 +285,12 @@ public class AntrackService extends Service implements LocationListener, Connect
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		
+		canKeepRunning = false;
+		mHandler.removeCallbacks(uploadImageTask);
+		mHandler = null;
+		
+		AntrackApp.getInstance(getApplicationContext()).cancelAll();
 		
 		LocalBroadcastManager.getInstance(AntrackService.this).unregisterReceiver(mBroadcastReceiver);
 		
@@ -235,7 +334,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 		//3. if sharing, save to db, upload, do stats
 		if(isSharingLocation()){
 			//save to db
-			AntrackApp.getInstance(getApplicationContext()).getDbhelper().insert(location, toDisplay);
+			AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertLocation(location, toDisplay);
 			//upload location
 			uploadLocationToServer(location, toDisplay);
 			if(toDisplay){

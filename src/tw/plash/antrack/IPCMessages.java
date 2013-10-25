@@ -30,7 +30,13 @@ public interface IPCMessages {
 	/*
 	 * local broadcast
 	 */
-	final String LOCALBROADCAST_START_SHARING = "tw.plash.antrack.start.sharing";
-	final String LOCALBROADCAST_STOP_SHARING = "tw.plash.antrack.stop.sharing";
-	final String LOCALBROADCAST_ = "tw.plash.antrack.";
+	final String LB_START_SHARING = "tw.plash.antrack.start.sharing";
+	final String LB_STOP_SHARING = "tw.plash.antrack.stop.sharing";
+	
+	final String LB_IMAGE_CREATE = "tw.plash.antrack.image.create";
+	final String LB_IMAGE_CONFIRM = "tw.plash.antrack.image.confirm";
+	final String LB_IMAGE_CANCEL = "tw.plash.antrack.image.cancel";
+	
+	final String LB_EXTRA_IMAGE_PATH = "tw.plash.antrack.image.path";
+	final String LB_EXTRA_REQUEST_CODE = "tw.plash.antrack.request.code";
 }

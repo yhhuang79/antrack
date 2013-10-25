@@ -40,6 +40,10 @@ import com.squareup.picasso.Picasso;
 public class Utility {
 	
 	private static final double earthRadiusInMeters = 6371008.7714;
+	private static final double earthCircumferenceInMeters = 2 * Math.PI * earthRadiusInMeters;
+	
+	//if input target size is smaller than 100 dp, assume it's for image markers on map
+	private static final int IMAGE_MARKER_THRESHOLD = 100;
 	
 	private static final long MASK_16_BITS = 0xFFFFL;
 	private static final int MASK_BIT_1 = 0x1;
@@ -241,6 +245,14 @@ public class Utility {
 		return degree / 180 * Math.PI;
 	}
 	
+	public static void getLatitudeGrid(){
+		
+	}
+	
+	public static void getLongitudeGrid(){
+		
+	}
+	
 	public static String encode(String input){
 		String output = null;
 		try {
@@ -268,7 +280,7 @@ public class Utility {
 		log("", msg);
 	}
 	
-	public static void geoTagPicture(String path, double latitude, double longitude, String timestamp) {
+	private void geoTagPicture(String path, double latitude, double longitude, String timestamp) {
 		ExifInterface exif;
 		
 		try {
@@ -328,7 +340,7 @@ public class Utility {
 		}
 	}
 	
-	public static Bitmap getThumbnail(String path, int targetLongEdge){
+	synchronized public static Bitmap getThumbnail(String path, int targetLongEdge){
 		logHeap();
 		System.gc();
 		int inLongEdge = 0;
@@ -387,10 +399,14 @@ public class Utility {
 				Bitmap tmpBitmap = BitmapFactory.decodeStream(in, null, options);
 				Log.e("tw.", "getthumbnail, bitmap tmp size (" + tmpBitmap.getWidth() + ", " + tmpBitmap.getHeight() + ")");
 				Bitmap preRotationBitmap;
-				if(longIsWidth){
-					preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredLongEdge, desiredShortEdge);
+				if(targetLongEdge > IMAGE_MARKER_THRESHOLD){
+					if(longIsWidth){
+						preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredLongEdge, desiredShortEdge);
+					} else{
+						preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredShortEdge, desiredLongEdge);
+					}
 				} else{
-					preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredShortEdge, desiredLongEdge);
+					preRotationBitmap = ThumbnailUtils.extractThumbnail(tmpBitmap, desiredLongEdge, desiredLongEdge);
 				}
 				
 				Matrix matrix = new Matrix();

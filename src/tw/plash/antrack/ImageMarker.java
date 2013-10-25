@@ -1,5 +1,9 @@
 package tw.plash.antrack;
 
+import android.location.Location;
+
+import com.google.android.gms.maps.model.LatLng;
+
 public class ImageMarker {
 	
 	private double latitude;
@@ -7,11 +11,15 @@ public class ImageMarker {
 	private long time;
 	private String path;
 	
+	private int code;
+	
 	public ImageMarker() {
 		latitude = 0;
 		longitude = 0;
 		time = 0;
 		path = null;
+		
+		code = -1;
 	}
 
 	public double getLatitude() {
@@ -44,5 +52,23 @@ public class ImageMarker {
 
 	public void setPath(String path) {
 		this.path = path;
+	}
+	
+	public void setCode(int code){
+		this.code = code;
+	}
+	
+	public int getCode(){
+		return code;
+	}
+	
+	public void setLocation(Location location){
+		setLatitude(location.getLatitude());
+		setLongitude(location.getLongitude());
+	}
+	
+	public void setLatLng(LatLng latlng){
+		setLatitude(latlng.latitude);
+		setLongitude(latlng.longitude);
 	}
 }

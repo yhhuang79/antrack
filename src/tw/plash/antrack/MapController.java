@@ -12,6 +12,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.MarkerOptionsCreator;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -123,6 +124,14 @@ public class MapController {
 	
 	synchronized public void moveToLocation(Location location){
 		animateToLocation(location);
+	}
+	
+	public boolean hasLocation(){
+		if(latestLocation != null){
+			return true;
+		} else{
+			return false;
+		}
 	}
 	
 	public LatLng getLatestLocation(){

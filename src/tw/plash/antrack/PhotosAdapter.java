@@ -15,9 +15,9 @@ import com.squareup.picasso.Picasso;
 public class PhotosAdapter extends BaseAdapter {
 	
 	private Context context;
-	private List<String> imagepaths;
+	private List<ImageMarker> imagepaths;
 	
-	public PhotosAdapter(Context context, List<String> imagepaths) {
+	public PhotosAdapter(Context context, List<ImageMarker> imagepaths) {
 		this.context = context;
 		this.imagepaths = imagepaths;
 	}
@@ -29,7 +29,7 @@ public class PhotosAdapter extends BaseAdapter {
 	
 	@Override
 	public String getItem(int position) {
-		return imagepaths.get(position);
+		return imagepaths.get(position).getPath();
 	}
 	
 	@Override
