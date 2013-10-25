@@ -14,4 +14,7 @@ public interface Constants {
 	public final String API_RES_KEY_STATUS_CODE = "status_code";
 	
 	public final int MAX_INT = (int) (Math.pow(2, 16) - 1);
+	
+	public final int LOCATION_INTERVAL = 10000; //10 seconds
+	public final int LOCATION_FASTEST_INTERVAL = 5000; //5 seconds
 }

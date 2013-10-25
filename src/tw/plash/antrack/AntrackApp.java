@@ -9,15 +9,12 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import tw.plash.antrack.connection.EncodedRequest;
-
 import android.content.Context;
+import android.location.Location;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.Volley;
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Picasso.Builder;
 
 public class AntrackApp {
 	

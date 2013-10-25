@@ -12,12 +12,11 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.location.Location;
-import android.webkit.WebChromeClient.CustomViewCallback;
 
 public class DBHelper {
 	
 	private static final String DATABASE_NAME = "antrack";
-	private static final int DATABASE_VERSION = 8;
+	private static final int DATABASE_VERSION = 10;
 	private static final String CURRENT_TRIP_TABLE = "currenttriptable";
 	private static final String IMAGES_TABLE = "imagestable";
 	private static final String STATS_TABLE = "statstable";
@@ -92,7 +91,23 @@ public class DBHelper {
 		}
 	}
 	
-	
+	synchronized public long insertAntsLocation(AntsLocation antsLocation) {
+		if (db.isOpen()) {
+			ContentValues cv = new ContentValues();
+			cv.put("latitude", antsLocation.getLatitude());
+			cv.put("longitude", antsLocation.getLongitude());
+			cv.put("altitude", antsLocation.getAltitude());
+			cv.put("accuracy", antsLocation.getAccuracy());
+			cv.put("speed", antsLocation.getSpeed());
+			cv.put("bearing", antsLocation.getBearing());
+			cv.put("locationsource", antsLocation.getProvider());
+			cv.put("time", antsLocation.getTime());
+			cv.put("todisplay", antsLocation.getToDisplay());
+			return db.insert(CURRENT_TRIP_TABLE, null, cv);
+		} else {
+			return ERROR_DB_IS_CLOSED;
+		}
+	}
 	
 	synchronized public long insertLocation(Location location, boolean toDisplay) {
 		if (db.isOpen()) {
@@ -113,7 +128,7 @@ public class DBHelper {
 	}
 	
 	synchronized public List<Location> getAllDisplayableLocations(){
-		ArrayList<Location> locations = new ArrayList<Location>();
+		List<Location> locations = new ArrayList<Location>();
 		if(db.isOpen()){
 			Cursor cursor = db.query(CURRENT_TRIP_TABLE, null, "todisplay > 0", null, null, null, null);
 			if (cursor.moveToFirst()) {

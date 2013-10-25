@@ -63,7 +63,7 @@ public class MapController {
 		LatLng firstPoint = points.get(0);
 		latestLocation = points.get(points.size() - 1);
 		drawMarker(firstPoint, "Start");
-		gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(latestLocation, 10));
+		gmap.animateCamera(CameraUpdateFactory.newLatLng(latestLocation));
 	}
 	
 	synchronized public void drawEndMarker() {

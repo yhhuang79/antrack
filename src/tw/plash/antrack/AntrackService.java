@@ -1,6 +1,9 @@
 package tw.plash.antrack;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,6 +28,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.android.volley.Response;
+import com.android.volley.Response.ErrorListener;
 import com.android.volley.Response.Listener;
 import com.android.volley.VolleyError;
 import com.google.android.gms.common.ConnectionResult;
@@ -43,6 +47,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 	private LocationRequest locationRequest;
 	private SharedPreferences preference;
 	private Location previousLocation;
+	private BlockingQueue<AntsLocation> pendingRetryLocations;
 	
 	private TripStatictics stats;
 	private boolean uploadTaskIsRunning;
@@ -239,6 +244,8 @@ public class AntrackService extends Service implements LocationListener, Connect
 	public void onCreate() {
 		super.onCreate();
 		
+		pendingRetryLocations = new LinkedBlockingQueue<AntsLocation>();
+		
 		mHandler = new Handler();
 		uploadTaskIsRunning = false;
 		canKeepRunning = true;
@@ -263,8 +270,8 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	private void setupLocationRequest() {
 		locationRequest = LocationRequest.create();
-		locationRequest.setInterval(5000);
-		locationRequest.setFastestInterval(500);
+		locationRequest.setInterval(Constants.LOCATION_INTERVAL);
+		locationRequest.setFastestInterval(Constants.LOCATION_FASTEST_INTERVAL);
 		locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 	}
 	
@@ -303,6 +310,8 @@ public class AntrackService extends Service implements LocationListener, Connect
 			locationClient.disconnect();
 		}
 		locationClient = null;
+		
+		pendingRetryLocations = null;
 	}
 	
 	@Override
@@ -333,10 +342,12 @@ public class AntrackService extends Service implements LocationListener, Connect
 		}
 		//3. if sharing, save to db, upload, do stats
 		if(isSharingLocation()){
+			AntsLocation antsLocation = new AntsLocation(location, toDisplay);
 			//save to db
-			AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertLocation(location, toDisplay);
+			AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertAntsLocation(antsLocation);
 			//upload location
-			uploadLocationToServer(location, toDisplay);
+			uploadLocationToServer(antsLocation);
+//			uploadLocationsToServer();
 			if(toDisplay){
 				//do stats
 				stats.addLocation(location);
@@ -357,30 +368,68 @@ public class AntrackService extends Service implements LocationListener, Connect
 		return result;
 	}
 	
-	private void uploadLocationToServer(Location location, boolean toDisplay) {
-		String token = preference.getString("token", null);
-		try {
-			AntrackApp.getInstance(getApplication()).getApi()
-				.upload(token, location, toDisplay, new Listener<JSONObject>() {
+	synchronized private void uploadLocationToServer(AntsLocation antsLocation) {
+		if(pendingRetryLocations.isEmpty()){
+			//no pending locations, do current location only
+			new Thread(new locationUploadTask(antsLocation)).start();
+		} else{
+			//there are pending locations
+			List<AntsLocation> locations = new ArrayList<AntsLocation>();
+			pendingRetryLocations.drainTo(locations); //get all pending locations
+			locations.add(antsLocation); //and current location
+			new Thread(new locationUploadTask(locations)).start();
+		}
+	}
+	
+	private class locationUploadTask implements Runnable{
+		
+		private List<AntsLocation> locations;
+		
+		public locationUploadTask(List<AntsLocation> locations){
+			this.locations = locations;
+		}
+		
+		public locationUploadTask(AntsLocation location) {
+			this.locations = new ArrayList<AntsLocation>();
+			this.locations.add(location);
+		}
+		
+		@Override
+		public void run() {
+			String token = preference.getString("token", null);
+			try {
+				AntrackApp.getInstance(getApplication()).getApi().upload(token, locations, new Listener<JSONObject>() {
 					@Override
 					public void onResponse(JSONObject obj) {
 						try {
-							if(obj.getInt("status_code") == 200){
+							if(obj.getInt(Constants.API_RES_KEY_STATUS_CODE) == 200){
 								int followers = obj.getInt("number_of_watcher");
 								AntrackApp.getInstance(AntrackService.this).setFollowers(followers);
+							} else{
+								addToRetry();
 							}
 						} catch (JSONException e) {
 							e.printStackTrace();
+							addToRetry();
 						}
 					}
-				}, new Response.ErrorListener() {
+				}, new ErrorListener() {
 					@Override
 					public void onErrorResponse(VolleyError arg0) {
+						addToRetry();
 					}
-				}
-			);
-		} catch (JSONException e) {
-			e.printStackTrace();
+				});
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 		}
-	}
+		
+		private void addToRetry(){
+			synchronized (pendingRetryLocations) {
+				for(AntsLocation location : locations){
+					pendingRetryLocations.offer(location);
+				}
+			}
+		}
+	};
 }
