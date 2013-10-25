@@ -47,53 +47,71 @@
         <View 
             android:layout_width="0dip"
             android:layout_height="match_parent"
-            android:layout_weight="0.0625"/>
+            android:layout_weight="0.05"/>
         
         <ImageButton
             android:id="@+id/settings"
             android:layout_width="0dip"
             android:layout_height="40dip"
-            android:layout_weight="0.25"
+            android:layout_weight="0.15"
             android:background="@drawable/camerabuttoninactivebg"
             android:enabled="false"
             android:scaleType="fitCenter"
-            android:src="@drawable/settings" />
+            android:src="@drawable/settings" 
+            android:contentDescription="Settings"/>
         
         <View 
             android:layout_width="0dip"
             android:layout_height="match_parent"
-            android:layout_weight="0.0625"/>
+            android:layout_weight="0.05"/>
+        
+        <ImageButton
+            android:id="@+id/share"
+            android:layout_width="0dip"
+            android:layout_weight="0.2"
+            android:layout_height="40dip"
+            android:background="@drawable/camerabuttoninactivebg"
+            android:scaleType="fitCenter"
+            android:src="@drawable/camera" 
+            android:contentDescription="Share"/>
+        
+        <View 
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            android:layout_weight="0.05"/>
         
         <Button
             android:id="@+id/controlbutton"
             android:layout_width="0dip"
-            android:layout_weight="0.25"
+            android:layout_weight="0.2"
             android:layout_height="40dip"
             android:layout_marginLeft="8dip"
             android:layout_marginRight="8dip"
             android:background="@color/action_button_state"
             android:text="BUTTON 1"
             android:textStyle="bold"
-            android:textColor="@android:color/white" />
+            android:textColor="@android:color/white"
+            android:contentDescription="Start/Stop"/>
 
         <View 
             android:layout_width="0dip"
             android:layout_height="match_parent"
-            android:layout_weight="0.0625"/>
+            android:layout_weight="0.05"/>
         
         <ImageButton
             android:id="@+id/camera"
             android:layout_width="0dip"
-            android:layout_weight="0.25"
+            android:layout_weight="0.2"
             android:layout_height="40dip"
             android:background="@drawable/camerabuttoninactivebg"
             android:scaleType="fitCenter"
-            android:src="@drawable/camera" />
+            android:src="@drawable/camera"
+            android:contentDescription="Camera"/>
         
         <View 
             android:layout_width="0dip"
             android:layout_height="match_parent"
-            android:layout_weight="0.0625"/>
+            android:layout_weight="0.05"/>
     </LinearLayout>
 
 </RelativeLayout>
