@@ -16,8 +16,9 @@ import android.location.Location;
 public class DBHelper {
 	
 	private static final String DATABASE_NAME = "antrack";
-	private static final int DATABASE_VERSION = 10;
+	private static final int DATABASE_VERSION = 12;
 	private static final String CURRENT_TRIP_TABLE = "currenttriptable";
+	private static final String PENDING_UPLOAD_LOCATION_TABLE = "pendinguploadlocation";
 	private static final String IMAGES_TABLE = "imagestable";
 	private static final String STATS_TABLE = "statstable";
 	private static final int ERROR_DB_IS_CLOSED = -2;
@@ -25,6 +26,18 @@ public class DBHelper {
 	private SQLiteDatabase db;
 	
 	private static final String CREATE_TABLE_CURRENT_TRIP = "CREATE TABLE " + CURRENT_TRIP_TABLE
+			+ "(id INTEGER PRIMARY KEY, "
+			+ "latitude REAL, "
+			+ "longitude REAL, "
+			+ "altitude REAL, "
+			+ "accuracy REAL, "
+			+ "speed REAL, "
+			+ "bearing REAL, "
+			+ "locationsource TEXT, "
+			+ "time INTEGER, "
+			+ "todisplay INTEGER)";
+	
+	private static final String CREATE_TABLE_PENDING_UPLOAD_LOCATION = "CREATE TABLE " + PENDING_UPLOAD_LOCATION_TABLE
 			+ "(id INTEGER PRIMARY KEY, "
 			+ "latitude REAL, "
 			+ "longitude REAL, "
@@ -62,6 +75,7 @@ public class DBHelper {
 		public void onCreate(SQLiteDatabase db) {
 			try {
 				db.execSQL(CREATE_TABLE_CURRENT_TRIP);
+				db.execSQL(CREATE_TABLE_PENDING_UPLOAD_LOCATION);
 				db.execSQL(CREATE_TABLE_IMAGES);
 				db.execSQL(CREATE_TABLE_STATS);
 			} catch (SQLException e) {
@@ -73,6 +87,7 @@ public class DBHelper {
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			try {
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + CURRENT_TRIP_TABLE);
+				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + PENDING_UPLOAD_LOCATION_TABLE);
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + IMAGES_TABLE);
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + STATS_TABLE);
 			} catch (SQLException e) {
@@ -139,6 +154,59 @@ public class DBHelper {
 					locationHolder.setTime(cursor.getLong(cursor.getColumnIndex("time")));
 					locations.add(locationHolder);
 				} while (cursor.moveToNext());
+			}
+			cursor.close();
+		}
+		return locations;
+	}
+	
+	synchronized public long insertPendingUploadLocation(Location location, boolean toDisplay) {
+		List<AntsLocation> locations = new ArrayList<AntsLocation>();
+		locations.add(new AntsLocation(location, toDisplay));
+		return insertPendingUploadLocations(locations);
+	}
+	
+	synchronized public long insertPendingUploadLocations(List<AntsLocation> locations) {
+		if (db.isOpen()) {
+			for(AntsLocation antsLocation : locations){
+				ContentValues cv = new ContentValues();
+				cv.put("latitude", antsLocation.getLatitude());
+				cv.put("longitude", antsLocation.getLongitude());
+				cv.put("altitude", antsLocation.getAltitude());
+				cv.put("accuracy", antsLocation.getAccuracy());
+				cv.put("speed", antsLocation.getSpeed());
+				cv.put("bearing", antsLocation.getBearing());
+				cv.put("locationsource", antsLocation.getProvider());
+				cv.put("time", antsLocation.getTime());
+				cv.put("todisplay", antsLocation.getToDisplay());
+				db.insert(PENDING_UPLOAD_LOCATION_TABLE, null, cv);
+			}
+			return 1;
+		} else {
+			return ERROR_DB_IS_CLOSED;
+		}
+	}
+	
+	synchronized public List<AntsLocation> getAllPendingUploadLocations(){
+		List<AntsLocation> locations = new ArrayList<AntsLocation>();
+		if(db.isOpen()){
+			Cursor cursor = db.query(PENDING_UPLOAD_LOCATION_TABLE, null, null, null, null, null, null);
+			if (cursor.moveToFirst()) {
+				do {
+					Location locationHolder = new Location("");
+					locationHolder.setLatitude(cursor.getDouble(cursor.getColumnIndex("latitude")));
+					locationHolder.setLongitude(cursor.getDouble(cursor.getColumnIndex("longitude")));
+					locationHolder.setAltitude(cursor.getDouble(cursor.getColumnIndex("altitude")));
+					locationHolder.setAccuracy(cursor.getFloat(cursor.getColumnIndex("accuracy")));
+					locationHolder.setSpeed(cursor.getFloat(cursor.getColumnIndex("speed")));
+					locationHolder.setBearing(cursor.getFloat(cursor.getColumnIndex("bearing")));
+					locationHolder.setProvider(cursor.getString(cursor.getColumnIndex("locationsource")));
+					locationHolder.setTime(cursor.getLong(cursor.getColumnIndex("time")));
+					int toDisplay = cursor.getInt(cursor.getColumnIndex("todisplay"));
+					locations.add(new AntsLocation(locationHolder, toDisplay));
+				} while (cursor.moveToNext());
+				//clear the table to prevent duplicate upload
+				db.delete(PENDING_UPLOAD_LOCATION_TABLE, null, null);
 			}
 			cursor.close();
 		}

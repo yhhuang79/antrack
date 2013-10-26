@@ -113,6 +113,22 @@ public class MapController {
 		}
 	}
 	
+	private void animateToLocation(Location location, int zoom){
+		if(location != null){
+			gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(location2LatLng(location), zoom));
+		}
+	}
+	
+	public void setZoomLevel(int zoom){
+		if(latestLocation != null){
+			gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(latestLocation, zoom));
+		}
+	}
+	
+	public int getZoomLevel(){
+		return (int) Math.floor(gmap.getCameraPosition().zoom);
+	}
+	
 	synchronized public void centerAtMyLocation() {
 		Location location = gmap.getMyLocation();
 		if(location != null){
@@ -124,6 +140,10 @@ public class MapController {
 	
 	synchronized public void moveToLocation(Location location){
 		animateToLocation(location);
+	}
+	
+	synchronized public void moveToLocation(Location location, int zoom){
+		animateToLocation(location, zoom);
 	}
 	
 	public boolean hasLocation(){

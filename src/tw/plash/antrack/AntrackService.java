@@ -47,7 +47,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 	private LocationRequest locationRequest;
 	private SharedPreferences preference;
 	private Location previousLocation;
-	private BlockingQueue<AntsLocation> pendingRetryLocations;
+//	private BlockingQueue<AntsLocation> pendingRetryLocations;
 	
 	private TripStatictics stats;
 	private boolean uploadTaskIsRunning;
@@ -68,7 +68,8 @@ public class AntrackService extends Service implements LocationListener, Connect
 					public void onResponse(JSONObject obj) {
 						Log.e("tw.uploadImageTask", "upload image response " + obj.toString());
 						try {
-							if(obj.getInt(Constants.API_RES_KEY_STATUS_CODE) == 200){
+							int statusCode = obj.getInt(Constants.API_RES_KEY_STATUS_CODE);
+							if(statusCode == 200 || statusCode == 409){
 								//mark as uploaded
 								AntrackApp.getInstance(getApplicationContext()).getDbhelper().setImageMarkerState(code, Constants.IMAGE_MARKER_STATE.DONE);
 							}
@@ -205,7 +206,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 		Notification notification = new Notification(R.drawable.ic_launcher, "sharing has started",
 				System.currentTimeMillis());
 		PendingIntent pendingIntent = PendingIntent.getActivity(AntrackService.this, 0, new Intent(AntrackService.this,
-				AntrackMapActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
+				AntrackMapActivity.class).setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT), PendingIntent.FLAG_UPDATE_CURRENT);
 		notification.setLatestEventInfo(AntrackService.this, "AnTrack", "sharing...", pendingIntent);
 		startForeground(1337, notification);
 	}
@@ -244,7 +245,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 	public void onCreate() {
 		super.onCreate();
 		
-		pendingRetryLocations = new LinkedBlockingQueue<AntsLocation>();
+//		pendingRetryLocations = new LinkedBlockingQueue<AntsLocation>();
 		
 		mHandler = new Handler();
 		uploadTaskIsRunning = false;
@@ -311,7 +312,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 		}
 		locationClient = null;
 		
-		pendingRetryLocations = null;
+//		pendingRetryLocations = null;
 	}
 	
 	@Override
@@ -369,14 +370,16 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	synchronized private void uploadLocationToServer(AntsLocation antsLocation) {
-		if(pendingRetryLocations.isEmpty()){
+		Log.d("tw.uploadlocation", "uploadLocationToServer");
+		List<AntsLocation> locations = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getAllPendingUploadLocations();
+		if(locations.isEmpty()){
+			Log.d("tw.uploadlocation", "uploadLocationToServer: no pending locations");
 			//no pending locations, do current location only
 			new Thread(new locationUploadTask(antsLocation)).start();
 		} else{
-			//there are pending locations
-			List<AntsLocation> locations = new ArrayList<AntsLocation>();
-			pendingRetryLocations.drainTo(locations); //get all pending locations
-			locations.add(antsLocation); //and current location
+			Log.d("tw.uploadlocation", "uploadLocationToServer: have pending locations");
+			//there are pending locations, add current lcoation to the list the upload them all
+			locations.add(antsLocation);
 			new Thread(new locationUploadTask(locations)).start();
 		}
 	}
@@ -396,6 +399,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 		
 		@Override
 		public void run() {
+			Log.d("tw.uploadlocation", "locationUploadTask: run");
 			String token = preference.getString("token", null);
 			try {
 				AntrackApp.getInstance(getApplication()).getApi().upload(token, locations, new Listener<JSONObject>() {
@@ -425,11 +429,8 @@ public class AntrackService extends Service implements LocationListener, Connect
 		}
 		
 		private void addToRetry(){
-			synchronized (pendingRetryLocations) {
-				for(AntsLocation location : locations){
-					pendingRetryLocations.offer(location);
-				}
-			}
+			Log.d("tw.uploadlocation", "locationUploadTask: add to retry");
+			AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertPendingUploadLocations(locations);
 		}
 	};
 }

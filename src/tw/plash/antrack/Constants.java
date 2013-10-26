@@ -3,6 +3,7 @@ package tw.plash.antrack;
 public interface Constants {
 	public String packageName = "tw.plash.antrack";
 	public String PREF_FIXTOLOCATION = packageName + ".pref.fixtolocation";
+	public String PREF_LASTZOOMLEVEL = packageName + ".pref.lastzoomlevel";
 	
 	public enum IMAGE_MARKER_STATE{
 		INCOMPLETE,

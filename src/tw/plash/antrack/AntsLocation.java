@@ -7,12 +7,12 @@ public class AntsLocation extends Location {
 	private int toDisplay;
 	
 	public AntsLocation(Location location, boolean toDisplay){
+		this(location, toDisplay? 1 : 0);
+	}
+	
+	public AntsLocation(Location location, int toDisplay){
 		super(location);
-		if(toDisplay){
-			this.toDisplay = 1;
-		} else{
-			this.toDisplay = 0;
-		}
+		this.toDisplay = toDisplay;
 	}
 	
 	public void setToDisplay(boolean toDisplay){

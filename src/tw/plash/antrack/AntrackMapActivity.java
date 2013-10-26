@@ -69,6 +69,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	private ImageButton camera;
 	private Button controlButton;
 	private ImageButton share;
+	private int zoomLevel;
 	
 	private OnLocationChangedListener onLocationChangedListener;
 	
@@ -558,6 +559,12 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	
 	private void getPreferences() {
 		fixToLocation = preference.getBoolean(Constants.PREF_FIXTOLOCATION, true);
+		zoomLevel = preference.getInt(Constants.PREF_LASTZOOMLEVEL, -1);
+//		if(zoomLevel >= 0){
+//			if(mapController != null){
+//				mapController.setZoomLevel(zoomLevel);
+//			}
+//		}
 	}
 	
 	private void startService() {
@@ -596,7 +603,13 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	}
 	
 	private void savePreferences() {
-		preference.edit().putBoolean(Constants.PREF_FIXTOLOCATION, fixToLocation).commit();
+//		if(mapController != null){
+//			zoomLevel = mapController.getZoomLevel();
+//		}
+		preference.edit()
+		.putBoolean(Constants.PREF_FIXTOLOCATION, fixToLocation)
+		.putInt(Constants.PREF_LASTZOOMLEVEL, zoomLevel)
+		.commit();
 	}
 	
 	@Override

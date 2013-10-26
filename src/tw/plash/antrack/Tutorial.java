@@ -233,7 +233,7 @@ public class Tutorial extends Activity {
 	}
 	
 	private void finishThisAndGoToMapActivity(){
-		startActivity(new Intent(Tutorial.this, AntrackMapActivity.class));
+		startActivity(new Intent(Tutorial.this, AntrackMapActivity.class).setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT));
 		finish();
 	}
 }
