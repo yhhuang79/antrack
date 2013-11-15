@@ -6,10 +6,6 @@
     <fragment
         android:id="@+id/map"
         class="tw.plash.antrack.AntrackSupportMapFragment"
-        xmlns:map="http://schemas.android.com/apk/res-auto"
-        map:cameraTargetLat="23.795398"
-        map:cameraTargetLng="121.012756"
-        map:cameraZoom="6"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/footer" 
