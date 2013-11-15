@@ -1,8 +1,5 @@
 package tw.plash.antrack;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -26,6 +23,7 @@ public class AntrackApp {
 	private StatsUpdater statsUpdater;
 	private int followers;
 	private Context context;
+	private Location latestLocation;
 	
 	private AntrackApp(Context context) {
 		this.context = context;
@@ -34,6 +32,7 @@ public class AntrackApp {
 		dbhelper = new DBHelper(context);
 		statsUpdater = new StatsUpdater();
 		followers = 0;
+		latestLocation = null;
 	}
 	
 	public AntrackApi getApi(){
@@ -54,6 +53,14 @@ public class AntrackApp {
 	
 	public int getFollowers(){
 		return followers;
+	}
+	
+	public void setLatestLocation(Location location){
+		latestLocation = location;
+	}
+	
+	public Location getLatestLocation(){
+		return latestLocation;
 	}
 	
 	public static synchronized AntrackApp getInstance(Context context){

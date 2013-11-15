@@ -1,12 +1,8 @@
 package tw.plash.antrack;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.util.Map;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -15,7 +11,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,12 +20,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
-import com.android.volley.Response;
-import com.android.volley.Response.ErrorListener;
-import com.android.volley.Response.Listener;
-import com.android.volley.VolleyError;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
@@ -45,65 +35,15 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	private LocationClient locationClient;
 	private LocationRequest locationRequest;
-	private SharedPreferences preference;
-	private Location previousLocation;
-//	private BlockingQueue<AntsLocation> pendingRetryLocations;
 	
 	private TripStatictics stats;
-	private boolean uploadTaskIsRunning;
-	private boolean canKeepRunning;
 	
-	private Handler mHandler;
-	private Runnable uploadImageTask = new Runnable() {
-		@Override
-		public void run() {
-			Log.e("tw.uploadImageTask", "start");
-			//get one marker and try upload
-			ImageMarker imageMarker = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getPendingUploadImageMarker();
-			if(imageMarker != null){
-				final int code = imageMarker.getCode();
-				AntrackApp.getInstance(getApplicationContext()).getApi()
-				.uploadImage(preference.getString("token", null), imageMarker, new Listener<JSONObject>() {
-					@Override
-					public void onResponse(JSONObject obj) {
-						Log.e("tw.uploadImageTask", "upload image response " + obj.toString());
-						try {
-							int statusCode = obj.getInt(Constants.API_RES_KEY_STATUS_CODE);
-							if(statusCode == 200 || statusCode == 409){
-								//mark as uploaded
-								AntrackApp.getInstance(getApplicationContext()).getDbhelper().setImageMarkerState(code, Constants.IMAGE_MARKER_STATE.DONE);
-							}
-						} catch (JSONException e) {
-							e.printStackTrace();
-						} finally{
-							//do it hare to succeed both try and catch block
-							startAgain();
-						}
-						Log.e("tw.uploadImageTask", "upload image response done");
-					}
-				}, new Response.ErrorListener() {
-					@Override
-					public void onErrorResponse(VolleyError error) {
-						Log.e("tw.uploadImageTask", "upload image response: error= " + error.toString());
-						startAgain();
-					}
-				});
-			} else{
-				uploadTaskIsRunning = false;
-			}
-		}
-		
-		private void startAgain(){
-			Log.e("tw.uploadImageTask", "start again");
-			if(canKeepRunning){
-				uploadTaskIsRunning = true;
-				mHandler.postDelayed(uploadImageTask, 1000);
-				Log.e("tw.uploadImageTask", "start again delayed");
-			} else{
-				uploadTaskIsRunning = false;
-			}
-		}
-	};
+	private AntrackApp app;
+	
+	private ImageUploader imageUploader;
+	private LocationUploader locationUploader;
+	
+	private Map<String, ActionHandler> handlers;
 	
 	private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
 		@Override
@@ -113,43 +53,25 @@ public class AntrackService extends Service implements LocationListener, Connect
 				prepareToStartSharing();
 			} else if(action.equals(IPCMessages.LB_STOP_SHARING)){
 				prepareToStopSharing();
-			} else if(action.equals(IPCMessages.LB_IMAGE_CREATE)){
-				String path = intent.getStringExtra(IPCMessages.LB_EXTRA_IMAGE_PATH);
-				int code = intent.getIntExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, -1);
-				if(code >= 0){
-					long result = AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertImageMarkerPath(code, path);
-					Log.d("tw.service", "added image marker path into DB row no." + result);
-				} else{
-					Log.e("tw.service", "received invalid code: " + code + " at image creation");
-				}
-			} else if(action.equals(IPCMessages.LB_IMAGE_CONFIRM)){
-				int code = intent.getIntExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, -1);
-				if(code >= 0){
-					int result = AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertImageMarkerLocation(code, previousLocation);
-					Log.d("tw.service", "added " + result + " image marker location(s) into DB");
-					if(uploadTaskIsRunning){
-						//do nothing
-					} else{
-						//start a new thread and start upload
-						uploadTaskIsRunning = true;
-						mHandler.post(uploadImageTask);
-					}
-				} else{
-					Log.e("tw.service", "received invalid code: " + code + " at image confirmation");
-				}
-			} else if(action.equals(IPCMessages.LB_IMAGE_CANCEL)){
-				int code = intent.getIntExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, -1);
-				if(code >= 0){
-					//remove it from DB
-					int result = AntrackApp.getInstance(getApplicationContext()).getDbhelper().removeImageMarker(code);
-					//result should be 1, if not, something is wrong
-					Log.d("tw.service", "removed " + result + " image marker entries from DB");
-				} else{
-					Log.e("tw.service", "received invalid code: " + code + " at image cancellation");
+			} else {
+				ActionHandler actionHandler = lookupHandlerBy(action);
+				if(actionHandler != null){
+					actionHandler.execute(intent);
 				}
 			}
 		}
 	};
+	
+	private ActionHandler lookupHandlerBy(String action){
+		return handlers.get(action);
+	}
+	
+	public void createHandlers(){
+		handlers = new HashMap<String, ActionHandler>();
+		handlers.put(IPCMessages.LB_IMAGE_CREATE, new ImageCreationHandler(app));
+		handlers.put(IPCMessages.LB_IMAGE_CONFIRM, new ImageConfirmationHandler(app, imageUploader));
+		handlers.put(IPCMessages.LB_IMAGE_CANCEL, new ImageCancellationHandler(app));
+	}
 	
 	private Messenger mLocationSender;
 	private final Messenger mReceiver = new Messenger(new IncomingHandler());
@@ -180,14 +102,10 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private void syncStuff(){
-		List<Location> locations = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getAllDisplayableLocations();
+		List<Location> locations = app.getDbhelper().getAllDisplayableLocations();
 		sendTrajectoryMessage(locations);
-		List<ImageMarker> imagemarkers = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getImageMarkers();
+		List<ImageMarker> imagemarkers = app.getDbhelper().getImageMarkers();
 		sendImageMarkerMessage(imagemarkers);
-		if(!locations.isEmpty()){
-			Location latestloLocation = locations.get(locations.size() - 1);
-			sendLocationMessage(latestloLocation);
-		}
 	}
 	
 	private void prepareToStartSharing() {
@@ -197,9 +115,9 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private void resetVariables() {
-		AntrackApp.getInstance(getApplicationContext()).getDbhelper().removeAll();
+		app.getDbhelper().removeAll();
 		stats.resetStats();
-		previousLocation = null;
+		app.setLatestLocation(null);
 	}
 	
 	private void showNotification() {
@@ -213,7 +131,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 	
 	private void prepareToStopSharing() {
 		serviceIsSharing = false;
-		AntrackApp.getInstance(AntrackService.this).getStatsUpdater().updateStats(stats);
+		app.getStatsUpdater().updateStats(stats);
 		stopForeground(true);
 	}
 	
@@ -245,18 +163,17 @@ public class AntrackService extends Service implements LocationListener, Connect
 	public void onCreate() {
 		super.onCreate();
 		
-//		pendingRetryLocations = new LinkedBlockingQueue<AntsLocation>();
-		
-		mHandler = new Handler();
-		uploadTaskIsRunning = false;
-		canKeepRunning = true;
-		
 		setupLocationRequest();
 		setupLocationClient();
 		
 		serviceIsSharing = false;
 		
-		preference = PreferenceManager.getDefaultSharedPreferences(AntrackService.this);
+		app = AntrackApp.getInstance(this);
+		
+		imageUploader = new ImageUploader(app, new Handler(), PreferenceManager.getDefaultSharedPreferences(AntrackService.this));
+		locationUploader = new LocationUploader(app, PreferenceManager.getDefaultSharedPreferences(AntrackService.this));
+		
+		createHandlers();
 		
 		stats = new TripStatictics();
 		
@@ -294,11 +211,10 @@ public class AntrackService extends Service implements LocationListener, Connect
 	public void onDestroy() {
 		super.onDestroy();
 		
-		canKeepRunning = false;
-		mHandler.removeCallbacks(uploadImageTask);
-		mHandler = null;
+		imageUploader.stop();
+		imageUploader = null;
 		
-		AntrackApp.getInstance(getApplicationContext()).cancelAll();
+		app.cancelAll();
 		
 		LocalBroadcastManager.getInstance(AntrackService.this).unregisterReceiver(mBroadcastReceiver);
 		
@@ -311,8 +227,6 @@ public class AntrackService extends Service implements LocationListener, Connect
 			locationClient.disconnect();
 		}
 		locationClient = null;
-		
-//		pendingRetryLocations = null;
 	}
 	
 	@Override
@@ -343,17 +257,16 @@ public class AntrackService extends Service implements LocationListener, Connect
 		}
 		//3. if sharing, save to db, upload, do stats
 		if(isSharingLocation()){
-			AntsLocation antsLocation = new AntsLocation(location, toDisplay);
+			AntrackLocation aLocation = new AntrackLocation(location, toDisplay);
 			//save to db
-			AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertAntsLocation(antsLocation);
+			app.getDbhelper().insertLocation(aLocation);
 			//upload location
-			uploadLocationToServer(antsLocation);
-//			uploadLocationsToServer();
+			locationUploader.upload(aLocation);
 			if(toDisplay){
 				//do stats
 				stats.addLocation(location);
 				//send stats
-				AntrackApp.getInstance(AntrackService.this).getStatsUpdater().updateStats(stats);
+				app.getStatsUpdater().updateStats(stats);
 			}
 		}
 	}
@@ -361,76 +274,11 @@ public class AntrackService extends Service implements LocationListener, Connect
 	private boolean shouldDisplayThisLocation(Location location) {
 		boolean result = false;
 		if (Utility.isValidLocation(location)) {
-			if ((previousLocation == null) || !Utility.isWithinAccuracyBound(previousLocation, location)) {
+			if ((app.getLatestLocation() == null) || !Utility.isWithinAccuracyBound(app.getLatestLocation(), location)) {
 				result = true;
 			}
-			previousLocation = location;
+			app.setLatestLocation(location);
 		}
 		return result;
 	}
-	
-	synchronized private void uploadLocationToServer(AntsLocation antsLocation) {
-		Log.d("tw.uploadlocation", "uploadLocationToServer");
-		List<AntsLocation> locations = AntrackApp.getInstance(getApplicationContext()).getDbhelper().getAllPendingUploadLocations();
-		if(locations.isEmpty()){
-			Log.d("tw.uploadlocation", "uploadLocationToServer: no pending locations");
-			//no pending locations, do current location only
-			new Thread(new locationUploadTask(antsLocation)).start();
-		} else{
-			Log.d("tw.uploadlocation", "uploadLocationToServer: have pending locations");
-			//there are pending locations, add current lcoation to the list the upload them all
-			locations.add(antsLocation);
-			new Thread(new locationUploadTask(locations)).start();
-		}
-	}
-	
-	private class locationUploadTask implements Runnable{
-		
-		private List<AntsLocation> locations;
-		
-		public locationUploadTask(List<AntsLocation> locations){
-			this.locations = locations;
-		}
-		
-		public locationUploadTask(AntsLocation location) {
-			this.locations = new ArrayList<AntsLocation>();
-			this.locations.add(location);
-		}
-		
-		@Override
-		public void run() {
-			Log.d("tw.uploadlocation", "locationUploadTask: run");
-			String token = preference.getString("token", null);
-			try {
-				AntrackApp.getInstance(getApplication()).getApi().upload(token, locations, new Listener<JSONObject>() {
-					@Override
-					public void onResponse(JSONObject obj) {
-						try {
-							if(obj.getInt(Constants.API_RES_KEY_STATUS_CODE) == 200){
-								int followers = obj.getInt("number_of_watcher");
-								AntrackApp.getInstance(AntrackService.this).setFollowers(followers);
-							} else{
-								addToRetry();
-							}
-						} catch (JSONException e) {
-							e.printStackTrace();
-							addToRetry();
-						}
-					}
-				}, new ErrorListener() {
-					@Override
-					public void onErrorResponse(VolleyError arg0) {
-						addToRetry();
-					}
-				});
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		private void addToRetry(){
-			Log.d("tw.uploadlocation", "locationUploadTask: add to retry");
-			AntrackApp.getInstance(getApplicationContext()).getDbhelper().insertPendingUploadLocations(locations);
-		}
-	};
 }

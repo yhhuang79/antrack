@@ -1,6 +1,5 @@
 package tw.plash.antrack;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -28,9 +27,7 @@ import android.net.NetworkInfo;
 import android.os.Debug;
 import android.util.Log;
 
-import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
-import com.squareup.picasso.Picasso;
 
 /**
  * Methods for bit manipulation.
@@ -243,14 +240,6 @@ public class Utility {
 	
 	private static double toRad(Double degree) {
 		return degree / 180 * Math.PI;
-	}
-	
-	public static void getLatitudeGrid(){
-		
-	}
-	
-	public static void getLongitudeGrid(){
-		
 	}
 	
 	public static String encode(String input){

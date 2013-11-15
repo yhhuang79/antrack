@@ -48,30 +48,22 @@ import com.android.volley.Response.Listener;
 import com.android.volley.VolleyError;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMap.OnMyLocationChangeListener;
-import com.google.android.gms.maps.LocationSource;
-import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
-import com.google.android.gms.maps.model.LatLng;
 
-public class AntrackMapActivity extends ActionBarActivity implements TabListener, TouchableWrapperCallback {
+public class AntrackMapActivity extends ActionBarActivity implements TabListener {
 	
 	private tw.plash.antrack.AntrackViewPager myViewPager;
 	private PagerAdapter pagerAdapter;
 	
-	private GoogleMap googlemap;
 	private MapController mapController;
-	private boolean fixToLocation;
 	private SharedPreferences preference;
+	
+	private AntrackApp app;
 	
 	private ImageButton fixLocationButton;
 //	private ImageButton settings;
 	private ImageButton camera;
 	private Button controlButton;
 	private ImageButton share;
-	private int zoomLevel;
-	
-	private OnLocationChangedListener onLocationChangedListener;
 	
 	private Messenger mSender = null;
 	private boolean mIsBound;
@@ -83,21 +75,18 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			switch (msg.what) {
 			case IPCMessages.SYNC_CURRENT_TRAJECTORY: {
 				List<Location> locations = (List<Location>) msg.obj;
-				if (!locations.isEmpty()) {
-					clearMapAndDrawSyncedTrajectory(locations);
-				}
+				mapController.clearMap();
+				mapController.drawLocations(locations);
 			}
 				break;
 			case IPCMessages.SYNC_CURRENT_IMAGE_MARKERS: {
 				List<ImageMarker> imagemarkers = (List<ImageMarker>) msg.obj;
-				if(!imagemarkers.isEmpty()){
-					drawImageMarkers(imagemarkers);
-				}
+				mapController.addImageMarkers(imagemarkers);
 			}
 				break;
 			case IPCMessages.UPDATE_NEW_LOCATION: {
 				Location location = (Location) msg.obj;
-				onLocationChangedListener.onLocationChanged(location);
+				mapController.setNewLocation(location);
 				if (AntrackService.isSharingLocation()) {
 					mapController.addLocation(location);
 				}
@@ -107,16 +96,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 				super.handleMessage(msg);
 			}
 		}
-	}
-	
-	private void clearMapAndDrawSyncedTrajectory(List<Location> locations) {
-		mapController.clearMap();
-		mapController.drawLocations(locations);
-		//draw image markers
-	}
-	
-	private void drawImageMarkers(List<ImageMarker> imagemarkers){
-		mapController.addImageMarkers(imagemarkers);
 	}
 	
 	private ServiceConnection mConnection = new ServiceConnection() {
@@ -169,8 +148,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		
 		setContentView(R.layout.main);
 		
+		app = AntrackApp.getInstance(this);
+		
 		preference = PreferenceManager.getDefaultSharedPreferences(AntrackMapActivity.this);
-		getPreferences();
 		
 		final ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayShowHomeEnabled(false);
@@ -211,8 +191,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			}
 		});
 		
-		// avoid setting up google map object more than once
-		if (googlemap == null) {
+		if(mapController == null){
 			setupGooglemap();
 		}
 		
@@ -230,32 +209,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		case ConnectionResult.SUCCESS:
 			AntrackSupportMapFragment asmf = ((AntrackSupportMapFragment) getSupportFragmentManager().findFragmentById(
 					R.id.map));
-			asmf.setCallback(AntrackMapActivity.this);
-			googlemap = asmf.getMap();
-			googlemap.setMyLocationEnabled(true);
-			googlemap.getUiSettings().setMyLocationButtonEnabled(false);
-			googlemap.getUiSettings().setZoomGesturesEnabled(true);
-			googlemap.getUiSettings().setZoomControlsEnabled(false);
-			googlemap.setIndoorEnabled(true);
-			googlemap.setLocationSource(new LocationSource() {
-				@Override
-				public void activate(OnLocationChangedListener listener) {
-					onLocationChangedListener = listener;
-				}
-				@Override
-				public void deactivate() {
-					onLocationChangedListener = null;
-				}
-			});
-			googlemap.setOnMyLocationChangeListener(new OnMyLocationChangeListener() {
-				@Override
-				public void onMyLocationChange(Location location) {
-					if (fixToLocation) {
-						mapController.moveToLocation(location);
-					}
-				}
-			});
-			mapController = new MapController(googlemap);
+			mapController = new MapController();
+			asmf.setCallback(mapController);
+			mapController.setMap(asmf.getMap());
 			break;
 		default:
 			break;
@@ -288,7 +244,6 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		fixLocationButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				fixToLocation = true;
 				try{
 					mapController.centerAtMyLocation();
 				} catch(NullPointerException e){
@@ -420,7 +375,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		stopService(new Intent(AntrackMapActivity.this, AntrackService.class));
 		Toast.makeText(AntrackMapActivity.this, "Stop sharing", Toast.LENGTH_SHORT).show();
 		prepareButtonsToStop();
-		AntrackApp.getInstance(AntrackMapActivity.this).getStatsUpdater().stopSharing();
+		app.getStatsUpdater().stopSharing();
 		executeStopSharingConnection();
 	}
 	
@@ -437,8 +392,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	private void executeStopSharingConnection() {
 		String token = preference.getString("token", null);
 		String timestamp = new Timestamp(new Date().getTime()).toString();
-		AntrackApp.getInstance(AntrackMapActivity.this).getApi()
-			.stop(token, timestamp, new Listener<JSONObject>() {
+		app.getApi().stop(token, timestamp, new Listener<JSONObject>() {
 				@Override
 				public void onResponse(JSONObject arg0) {
 				}
@@ -468,12 +422,13 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 			diag.setCancelable(false);
 			diag.setCanceledOnTouchOutside(false);
 			diag.show();
-			AntrackApp.getInstance(AntrackMapActivity.this).getApi()
+			app.getApi()
 				.initialize(uuid, username, timestamp, new Listener<JSONObject>() {
 					@Override
 					public void onResponse(JSONObject obj) {
 						// parse the jsonobject returned from server
 						// init share action intent
+						Log.e("tw.activity", "init res= " + obj.toString());
 						diag.dismiss();
 						try {
 							if (obj.getInt("status_code") == 200) {
@@ -502,8 +457,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	}
 	
 	private void prepareToStartSharing(String token, String url) {
-		AntrackApp.getInstance(AntrackMapActivity.this).getStatsUpdater().startSharing(System.currentTimeMillis(), SystemClock.elapsedRealtime());
-		AntrackApp.getInstance(AntrackMapActivity.this).setFollowers(0);
+		app.getStatsUpdater().startSharing(System.currentTimeMillis(), SystemClock.elapsedRealtime());
+		app.setFollowers(0);
+		Log.e("tw.activity", "new token= " + token);
 		preference.edit().putString("token", token).putString("url", url).commit();
 		mapController.clearMap();
 		prepareButtonsToStart();
@@ -558,13 +514,8 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	}
 	
 	private void getPreferences() {
-		fixToLocation = preference.getBoolean(Constants.PREF_FIXTOLOCATION, true);
-		zoomLevel = preference.getInt(Constants.PREF_LASTZOOMLEVEL, -1);
-//		if(zoomLevel >= 0){
-//			if(mapController != null){
-//				mapController.setZoomLevel(zoomLevel);
-//			}
-//		}
+		mapController.setFixToLocation(preference.getBoolean(Constants.PREF_FIXTOLOCATION, true));
+		mapController.setZoomLevel(preference.getFloat(Constants.PREF_LASTZOOMLEVEL, -1f));
 	}
 	
 	private void startService() {
@@ -589,7 +540,7 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 		savePreferences();
 		// cancal all pending or ongoing connections if not sharing
 		if (!AntrackService.isSharingLocation()) {
-			AntrackApp.getInstance(AntrackMapActivity.this).cancelAll();
+			app.cancelAll();
 		}
 	}
 	
@@ -603,12 +554,9 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	}
 	
 	private void savePreferences() {
-//		if(mapController != null){
-//			zoomLevel = mapController.getZoomLevel();
-//		}
 		preference.edit()
-		.putBoolean(Constants.PREF_FIXTOLOCATION, fixToLocation)
-		.putInt(Constants.PREF_LASTZOOMLEVEL, zoomLevel)
+		.putBoolean(Constants.PREF_FIXTOLOCATION, mapController.getFixToLocation())
+		.putFloat(Constants.PREF_LASTZOOMLEVEL, mapController.getZoomLevel())
 		.commit();
 	}
 	
@@ -623,10 +571,5 @@ public class AntrackMapActivity extends ActionBarActivity implements TabListener
 	
 	@Override
 	public void onTabUnselected(Tab arg0, FragmentTransaction arg1) {
-	}
-	
-	@Override
-	public void setIsTouched() {
-		fixToLocation = false;
 	}
 }

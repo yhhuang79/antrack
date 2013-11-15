@@ -33,13 +33,11 @@ public class AntrackViewPager extends ViewPager {
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {
 		float x = event.getX();
-		if(this.isPagingEnabled){
-			return super.onInterceptTouchEvent(event);
-		} else {
-			this.isBezelGesture = isBezelGesture(x);
-			//paging disabled, check for bezel gesture
-		} 
-		return true;
+		this.isBezelGesture = isBezelGesture(x);
+		if(this.isPagingEnabled || this.isBezelGesture){
+			return true;
+		}
+		return false;
 	}
 	
 	public void setPagingEnabled(boolean b){

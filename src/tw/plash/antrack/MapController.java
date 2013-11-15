@@ -9,23 +9,69 @@ import android.os.AsyncTask;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.LocationSource;
+import com.google.android.gms.maps.GoogleMap.OnCameraChangeListener;
+import com.google.android.gms.maps.GoogleMap.OnMyLocationChangeListener;
+import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.MarkerOptionsCreator;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-public class MapController {
+public class MapController implements TouchableWrapperCallback{
 	
-	private final GoogleMap gmap;
+	private GoogleMap gmap;
 	private Polyline trajectory;
 	private LatLng latestLocation;
+	private OnLocationChangedListener onLocationChangedListener;
+	private boolean fixToLocation;
 	
-	public MapController(GoogleMap gmap) {
-		this.gmap = gmap;
+	private float zoom;
+	
+	public MapController() {
 		this.trajectory = null;
 		this.latestLocation = null;
+		this.zoom = -1f;
+	}
+	
+	public void setMap(GoogleMap gmap){
+		this.gmap = gmap;
+		setupGmap();
+	}
+	
+	private void setupGmap(){
+		this.gmap.setMyLocationEnabled(true);
+		this.gmap.getUiSettings().setMyLocationButtonEnabled(false);
+		this.gmap.getUiSettings().setZoomGesturesEnabled(true);
+		this.gmap.getUiSettings().setZoomControlsEnabled(false);
+		this.gmap.setIndoorEnabled(true);
+		this.gmap.setOnCameraChangeListener(new OnCameraChangeListener() {
+			@Override
+			public void onCameraChange(CameraPosition position) {
+				zoom = position.zoom;
+			}
+		});
+		this.gmap.setLocationSource(new LocationSource() {
+			@Override
+			public void activate(OnLocationChangedListener listener) {
+				onLocationChangedListener = listener;
+			}
+			@Override
+			public void deactivate() {
+				onLocationChangedListener = null;
+			}
+		});
+		this.gmap.setOnMyLocationChangeListener(new OnMyLocationChangeListener() {
+			@Override
+			public void onMyLocationChange(Location location) {
+				if (fixToLocation) {
+					moveToLocation(location);
+				}
+			}
+		});
 	}
 	
 	public void clearMap() {
@@ -61,9 +107,13 @@ public class MapController {
 		trajectory = gmap.addPolyline(pline);
 		List<LatLng> points = trajectory.getPoints();
 		LatLng firstPoint = points.get(0);
-		latestLocation = points.get(points.size() - 1);
+//		latestLocation = points.get(points.size() - 1);
 		drawMarker(firstPoint, "Start");
-		gmap.animateCamera(CameraUpdateFactory.newLatLng(latestLocation));
+//		if(zoom > 0){
+//			gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(latestLocation, zoom));
+//		} else{
+//			gmap.animateCamera(CameraUpdateFactory.newLatLng(latestLocation));
+//		}
 	}
 	
 	synchronized public void drawEndMarker() {
@@ -109,27 +159,24 @@ public class MapController {
 	
 	private void animateToLocation(Location location){
 		if(location != null){
-			gmap.animateCamera(CameraUpdateFactory.newLatLng(location2LatLng(location)));
+			if(zoom > 0){
+				gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(location2LatLng(location), zoom));
+			} else{
+				gmap.animateCamera(CameraUpdateFactory.newLatLng(location2LatLng(location)));
+			}
 		}
 	}
 	
-	private void animateToLocation(Location location, int zoom){
-		if(location != null){
-			gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(location2LatLng(location), zoom));
-		}
+	public void setZoomLevel(float zoom){
+		this.zoom = zoom;
 	}
 	
-	public void setZoomLevel(int zoom){
-		if(latestLocation != null){
-			gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(latestLocation, zoom));
-		}
-	}
-	
-	public int getZoomLevel(){
-		return (int) Math.floor(gmap.getCameraPosition().zoom);
+	public float getZoomLevel(){
+		return zoom;
 	}
 	
 	synchronized public void centerAtMyLocation() {
+		fixToLocation = true;
 		Location location = gmap.getMyLocation();
 		if(location != null){
 			animateToLocation(location);
@@ -140,10 +187,6 @@ public class MapController {
 	
 	synchronized public void moveToLocation(Location location){
 		animateToLocation(location);
-	}
-	
-	synchronized public void moveToLocation(Location location, int zoom){
-		animateToLocation(location, zoom);
 	}
 	
 	public boolean hasLocation(){
@@ -160,5 +203,22 @@ public class MapController {
 	
 	private LatLng location2LatLng(Location location){
 		return new LatLng(location.getLatitude(), location.getLongitude());
+	}
+
+	@Override
+	public void setIsTouched() {
+		fixToLocation = false;
+	}
+	
+	public void setFixToLocation(boolean fix){
+		this.fixToLocation = fix;
+	}
+	
+	public boolean getFixToLocation(){
+		return this.fixToLocation;
+	}
+	
+	public void setNewLocation(Location location){
+		onLocationChangedListener.onLocationChanged(location);
 	}
 }

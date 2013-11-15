@@ -3,6 +3,8 @@ package tw.plash.antrack;
 import java.util.ArrayList;
 import java.util.List;
 
+import ch.hsr.geohash.GeoHash;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -16,7 +18,7 @@ import android.location.Location;
 public class DBHelper {
 	
 	private static final String DATABASE_NAME = "antrack";
-	private static final int DATABASE_VERSION = 12;
+	private static final int DATABASE_VERSION = 15;
 	private static final String CURRENT_TRIP_TABLE = "currenttriptable";
 	private static final String PENDING_UPLOAD_LOCATION_TABLE = "pendinguploadlocation";
 	private static final String IMAGES_TABLE = "imagestable";
@@ -51,8 +53,11 @@ public class DBHelper {
 	
 	private static final String CREATE_TABLE_IMAGES = "CREATE TABLE " + IMAGES_TABLE
 			+ "(id INTEGER PRIMARY KEY, "
-			+ "latitude REAL, "
-			+ "longitude REAL, "
+			+ "latitude_actual REAL, "
+			+ "longitude_actual REAL, "
+			+ "latitude_display REAL, "
+			+ "longitude_display REAL, "
+			+ "geohash TEXT, "
 			+ "time INTEGER, "
 			+ "path TEXT, "
 			+ "code INTEGER UNIQUE, "
@@ -106,25 +111,11 @@ public class DBHelper {
 		}
 	}
 	
-	synchronized public long insertAntsLocation(AntsLocation antsLocation) {
-		if (db.isOpen()) {
-			ContentValues cv = new ContentValues();
-			cv.put("latitude", antsLocation.getLatitude());
-			cv.put("longitude", antsLocation.getLongitude());
-			cv.put("altitude", antsLocation.getAltitude());
-			cv.put("accuracy", antsLocation.getAccuracy());
-			cv.put("speed", antsLocation.getSpeed());
-			cv.put("bearing", antsLocation.getBearing());
-			cv.put("locationsource", antsLocation.getProvider());
-			cv.put("time", antsLocation.getTime());
-			cv.put("todisplay", antsLocation.getToDisplay());
-			return db.insert(CURRENT_TRIP_TABLE, null, cv);
-		} else {
-			return ERROR_DB_IS_CLOSED;
-		}
+	synchronized public long insertLocation(AntrackLocation alocation){
+		return insertLocation(alocation.getLocation(), alocation.getToDisplay());
 	}
 	
-	synchronized public long insertLocation(Location location, boolean toDisplay) {
+	synchronized private long insertLocation(Location location, int toDisplay) {
 		if (db.isOpen()) {
 			ContentValues cv = new ContentValues();
 			cv.put("latitude", location.getLatitude());
@@ -135,7 +126,7 @@ public class DBHelper {
 			cv.put("bearing", location.getBearing());
 			cv.put("locationsource", location.getProvider());
 			cv.put("time", location.getTime());
-			cv.put("todisplay", toDisplay? 1 : 0);
+			cv.put("todisplay", toDisplay);
 			return db.insert(CURRENT_TRIP_TABLE, null, cv);
 		} else {
 			return ERROR_DB_IS_CLOSED;
@@ -145,7 +136,7 @@ public class DBHelper {
 	synchronized public List<Location> getAllDisplayableLocations(){
 		List<Location> locations = new ArrayList<Location>();
 		if(db.isOpen()){
-			Cursor cursor = db.query(CURRENT_TRIP_TABLE, null, "todisplay > 0", null, null, null, null);
+			Cursor cursor = db.query(CURRENT_TRIP_TABLE, null, "todisplay > 0", null, null, null, "time ASC");
 			if (cursor.moveToFirst()) {
 				do {
 					Location locationHolder = new Location("");
@@ -161,24 +152,24 @@ public class DBHelper {
 	}
 	
 	synchronized public long insertPendingUploadLocation(Location location, boolean toDisplay) {
-		List<AntsLocation> locations = new ArrayList<AntsLocation>();
-		locations.add(new AntsLocation(location, toDisplay));
+		List<AntrackLocation> locations = new ArrayList<AntrackLocation>();
+		locations.add(new AntrackLocation(location, toDisplay));
 		return insertPendingUploadLocations(locations);
 	}
 	
-	synchronized public long insertPendingUploadLocations(List<AntsLocation> locations) {
+	synchronized public long insertPendingUploadLocations(List<AntrackLocation> locations) {
 		if (db.isOpen()) {
-			for(AntsLocation antsLocation : locations){
+			for(AntrackLocation aLocation : locations){
 				ContentValues cv = new ContentValues();
-				cv.put("latitude", antsLocation.getLatitude());
-				cv.put("longitude", antsLocation.getLongitude());
-				cv.put("altitude", antsLocation.getAltitude());
-				cv.put("accuracy", antsLocation.getAccuracy());
-				cv.put("speed", antsLocation.getSpeed());
-				cv.put("bearing", antsLocation.getBearing());
-				cv.put("locationsource", antsLocation.getProvider());
-				cv.put("time", antsLocation.getTime());
-				cv.put("todisplay", antsLocation.getToDisplay());
+				cv.put("latitude", aLocation.getLocation().getLatitude());
+				cv.put("longitude", aLocation.getLocation().getLongitude());
+				cv.put("altitude", aLocation.getLocation().getAltitude());
+				cv.put("accuracy", aLocation.getLocation().getAccuracy());
+				cv.put("speed", aLocation.getLocation().getSpeed());
+				cv.put("bearing", aLocation.getLocation().getBearing());
+				cv.put("locationsource", aLocation.getLocation().getProvider());
+				cv.put("time", aLocation.getLocation().getTime());
+				cv.put("todisplay", aLocation.getToDisplay());
 				db.insert(PENDING_UPLOAD_LOCATION_TABLE, null, cv);
 			}
 			return 1;
@@ -187,8 +178,8 @@ public class DBHelper {
 		}
 	}
 	
-	synchronized public List<AntsLocation> getAllPendingUploadLocations(){
-		List<AntsLocation> locations = new ArrayList<AntsLocation>();
+	synchronized public List<AntrackLocation> getAllPendingUploadLocations(){
+		List<AntrackLocation> locations = new ArrayList<AntrackLocation>();
 		if(db.isOpen()){
 			Cursor cursor = db.query(PENDING_UPLOAD_LOCATION_TABLE, null, null, null, null, null, null);
 			if (cursor.moveToFirst()) {
@@ -203,7 +194,7 @@ public class DBHelper {
 					locationHolder.setProvider(cursor.getString(cursor.getColumnIndex("locationsource")));
 					locationHolder.setTime(cursor.getLong(cursor.getColumnIndex("time")));
 					int toDisplay = cursor.getInt(cursor.getColumnIndex("todisplay"));
-					locations.add(new AntsLocation(locationHolder, toDisplay));
+					locations.add(new AntrackLocation(locationHolder, toDisplay));
 				} while (cursor.moveToNext());
 				//clear the table to prevent duplicate upload
 				db.delete(PENDING_UPLOAD_LOCATION_TABLE, null, null);
@@ -213,11 +204,12 @@ public class DBHelper {
 		return locations;
 	}
 	
-	synchronized public long insertImageMarkerPath(int code, String path){
+	synchronized public long insertImageMarkerPath(int code, String path){ //XXX
 		if (db.isOpen()) {
 			ContentValues cv = new ContentValues();
 			cv.put("path", path);
 			cv.put("code", code);
+//			cv.put("geohash", "default"); //give it a default value
 			cv.put("state", Constants.IMAGE_MARKER_STATE.INCOMPLETE.ordinal());
 			return db.insert(IMAGES_TABLE, null, cv);
 		} else {
@@ -225,11 +217,34 @@ public class DBHelper {
 		}
 	}
 	
-	synchronized public int insertImageMarkerLocation(int code, Location location){
+	/*
+	 * 1. calculate geohash for new location
+	 * 2. check if there are already other image markers with the same geohash
+	 * 3. if geohash already exist -> find next available geohash, then check again
+	 * 4. if geohash ok -> get center lat/lon of the geohash and use it as display lat/lon
+	 */
+	synchronized public int insertImageMarkerLocation(int code, Location location){ //XXX
 		if (db.isOpen()) {
 			ContentValues cv = new ContentValues();
-			cv.put("latitude", location.getLatitude());
-			cv.put("longitude", location.getLongitude());
+			cv.put("latitude_actual", location.getLatitude());
+			cv.put("longitude_actual", location.getLongitude());
+			
+			//get a valid geohash
+			GeoHash geohash = GeoHash.withCharacterPrecision(location.getLatitude(), location.getLongitude(), Constants.GEOHASH_CHAR_PRECISION);
+			if(isGeoHashOccupied(geohash)){
+				//find the next available one
+				GeoHash[] geohashes = geohash.getAdjacent();
+				for(GeoHash hash : geohashes){
+					if(!isGeoHashOccupied(hash)){
+						geohash = hash;
+						break;
+					}
+				}
+			}
+			cv.put("latitude_display", geohash.getBoundingBoxCenterPoint().getLatitude());
+			cv.put("longitude_display", geohash.getBoundingBoxCenterPoint().getLongitude());
+			cv.put("geohash", geohash.toBase32());
+			
 			cv.put("time", System.currentTimeMillis()); //XXX
 			cv.put("state", Constants.IMAGE_MARKER_STATE.PENDING_UPLOAD.ordinal());
 			return db.update(IMAGES_TABLE, cv, "code = " + code, null);
@@ -238,7 +253,17 @@ public class DBHelper {
 		}
 	}
 	
-	synchronized public int setImageMarkerState(int code, Constants.IMAGE_MARKER_STATE state){
+	synchronized private boolean isGeoHashOccupied(GeoHash geohash){
+		boolean result = false;
+		Cursor cursor = db.query(IMAGES_TABLE, null, "geohash = '" + geohash.toBase32() + "'", null, null, null, null);
+		if (cursor.moveToFirst()) {
+			result = true;
+		}
+		cursor.close();
+		return result;
+	}
+	
+	synchronized public int setImageMarkerState(int code, Constants.IMAGE_MARKER_STATE state){ //XXX
 		if (db.isOpen()) {
 			ContentValues cv = new ContentValues();
 			cv.put("state", state.ordinal());
@@ -248,20 +273,20 @@ public class DBHelper {
 		}
 	}
 	
-	synchronized public ImageMarker getPendingUploadImageMarker(){
+	synchronized public ImageMarker getPendingUploadImageMarker(){ //XXX
 		if(db.isOpen()){
 			ImageMarker imageMarker = new ImageMarker();
 			int code = -1;
 			Cursor cursor = db.query(IMAGES_TABLE, null, "state = " + Constants.IMAGE_MARKER_STATE.PENDING_UPLOAD.ordinal(), null, null, null, "id ASC");
 			if (cursor.moveToFirst()) {
-				imageMarker.setLatitude(cursor.getDouble(cursor.getColumnIndex("latitude")));
-				imageMarker.setLongitude(cursor.getDouble(cursor.getColumnIndex("longitude")));
+				imageMarker.setLatitude(cursor.getDouble(cursor.getColumnIndex("latitude_actual")));
+				imageMarker.setLongitude(cursor.getDouble(cursor.getColumnIndex("longitude_actual")));
 				imageMarker.setTime(cursor.getLong(cursor.getColumnIndex("time")));
 				imageMarker.setPath(cursor.getString(cursor.getColumnIndex("path")));
 				code = cursor.getInt(cursor.getColumnIndex("code"));
 				imageMarker.setCode(code);
 				//also change the state to upload in progress to avoid duplicate upload
-//				setImageMarkerState(code, Constants.IMAGE_MARKER_STATE.UPLOAD_IN_PROGRESS); XXX
+//				setImageMarkerState(code, Constants.IMAGE_MARKER_STATE.UPLOAD_IN_PROGRESS);
 				cursor.close();
 				return imageMarker;
 			} else{
@@ -271,7 +296,7 @@ public class DBHelper {
 		return null;
 	}
 	
-	synchronized public long getNumberOfImageMarkers(){
+	synchronized public long getNumberOfImageMarkers(){ //XXX
 		String sql = "SELECT COUNT(id) FROM " + IMAGES_TABLE;
 		if (db.isOpen()) {
 			SQLiteStatement statement = db.compileStatement(sql);
@@ -282,15 +307,15 @@ public class DBHelper {
 		return 0;
 	}
 	
-	synchronized public List<ImageMarker> getImageMarkers(){
+	synchronized public List<ImageMarker> getImageMarkers(){ //XXX
 		List<ImageMarker> imagemarkers = new ArrayList<ImageMarker>();
 		if(db.isOpen()){
 			Cursor cursor = db.query(IMAGES_TABLE, null, null, null, null, null, null);
 			if (cursor.moveToFirst()) {
 				do {
 					ImageMarker imageMarkerHolder = new ImageMarker();
-					imageMarkerHolder.setLatitude(cursor.getDouble(cursor.getColumnIndex("latitude")));
-					imageMarkerHolder.setLongitude(cursor.getDouble(cursor.getColumnIndex("longitude")));
+					imageMarkerHolder.setLatitude(cursor.getDouble(cursor.getColumnIndex("latitude_display")));
+					imageMarkerHolder.setLongitude(cursor.getDouble(cursor.getColumnIndex("longitude_display")));
 					imageMarkerHolder.setTime(cursor.getLong(cursor.getColumnIndex("time")));
 					imageMarkerHolder.setPath(cursor.getString(cursor.getColumnIndex("path")));
 					imagemarkers.add(imageMarkerHolder);
@@ -333,6 +358,7 @@ public class DBHelper {
 		if(db.isOpen()){
 			db.delete(CURRENT_TRIP_TABLE, null, null);
 			db.delete(IMAGES_TABLE, null, null);
+			db.delete(PENDING_UPLOAD_LOCATION_TABLE, null, null);
 		}
 	}
 	
