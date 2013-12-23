@@ -1,4 +1,4 @@
-package tw.plash.antrack;
+package tw.plash.antrack.util;
 
 public interface Constants {
 	public String packageName = "tw.plash.antrack";

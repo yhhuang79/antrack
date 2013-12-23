@@ -1,5 +1,8 @@
-package tw.plash.antrack;
+package tw.plash.antrack.images;
 
+import tw.plash.antrack.ActionHandler;
+import tw.plash.antrack.AntrackApp;
+import tw.plash.antrack.util.IPCMessages;
 import android.content.Intent;
 import android.util.Log;
 

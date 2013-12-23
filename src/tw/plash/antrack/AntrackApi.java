@@ -14,7 +14,8 @@ import org.json.JSONObject;
 
 import tw.plash.antrack.connection.EncodedRequest;
 import tw.plash.antrack.connection.MultipartRequest;
-import android.location.Location;
+import tw.plash.antrack.images.ImageMarker;
+import tw.plash.antrack.util.Utility;
 import android.os.AsyncTask;
 import android.util.Log;
 

@@ -1,23 +1,25 @@
-package tw.plash.antrack;
+package tw.plash.antrack.map;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import tw.plash.antrack.images.ImageMarker;
+import tw.plash.antrack.util.TouchableWrapperCallback;
+import tw.plash.antrack.util.Utility;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.AsyncTask;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.GoogleMap.OnCameraChangeListener;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationChangeListener;
+import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.MarkerOptionsCreator;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 

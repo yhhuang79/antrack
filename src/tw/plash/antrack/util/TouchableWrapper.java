@@ -1,4 +1,4 @@
-package tw.plash.antrack;
+package tw.plash.antrack.util;
 
 import android.content.Context;
 import android.view.MotionEvent;

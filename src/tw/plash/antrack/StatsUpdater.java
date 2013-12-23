@@ -1,5 +1,6 @@
 package tw.plash.antrack;
 
+import tw.plash.antrack.util.Utility;
 import android.content.Context;
 import android.view.View;
 import android.widget.Chronometer;

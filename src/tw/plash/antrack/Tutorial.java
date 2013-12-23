@@ -1,12 +1,12 @@
 package tw.plash.antrack;
 
+import tw.plash.antrack.map.AntrackMapActivity;
+import tw.plash.antrack.util.Installation;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;

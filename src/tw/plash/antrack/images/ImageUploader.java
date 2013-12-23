@@ -1,8 +1,11 @@
-package tw.plash.antrack;
+package tw.plash.antrack.images;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import tw.plash.antrack.AntrackApp;
+import tw.plash.antrack.util.Constants;
+import tw.plash.antrack.util.Constants.IMAGE_MARKER_STATE;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.util.Log;

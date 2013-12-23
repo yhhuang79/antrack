@@ -14,8 +14,7 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import tw.plash.antrack.Utility;
-import android.content.Context;
+import tw.plash.antrack.util.Utility;
 import android.graphics.Bitmap;
 
 import com.android.volley.AuthFailureError;

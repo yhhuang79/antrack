@@ -3,8 +3,8 @@ package tw.plash.antrack;
 import java.util.ArrayList;
 import java.util.List;
 
-import ch.hsr.geohash.GeoHash;
-
+import tw.plash.antrack.images.ImageMarker;
+import tw.plash.antrack.util.Constants;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -14,6 +14,7 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.location.Location;
+import ch.hsr.geohash.GeoHash;
 
 public class DBHelper {
 	

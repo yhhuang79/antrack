@@ -1,6 +1,5 @@
 package tw.plash.antrack;
 
-import android.content.Context;
 import android.content.Intent;
 
 public abstract class ActionHandler {

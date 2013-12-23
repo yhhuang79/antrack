@@ -2,6 +2,7 @@ package tw.plash.antrack;
 
 import java.util.List;
 
+import tw.plash.antrack.images.ImageMarker;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;

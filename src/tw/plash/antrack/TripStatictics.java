@@ -1,8 +1,8 @@
 package tw.plash.antrack;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
 
+import tw.plash.antrack.util.Utility;
 import android.location.Location;
 import android.os.SystemClock;
 
