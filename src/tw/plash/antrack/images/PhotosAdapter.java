@@ -1,9 +1,10 @@
-package tw.plash.antrack;
+package tw.plash.antrack.images;
 
 import java.io.File;
 import java.util.List;
 
-import tw.plash.antrack.images.ImageMarker;
+import tw.plash.antrack.R;
+import tw.plash.antrack.R.drawable;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;

@@ -1,5 +1,7 @@
 package tw.plash.antrack;
 
+import tw.plash.antrack.images.PhotoFragment;
+import tw.plash.antrack.stats.StatsFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;

@@ -50,21 +50,8 @@ public class AntrackViewPager extends ViewPager {
 		return false;
 	}
 	
-//	private boolean isClickOnTabStrip(float y){
-//		if(y < topStripZone){
-//			return true;
-//		}
-//		return false;
-//	}
-	
-//	public void setHeight(float height){
-//		this.topStripZone = height * 0.05f;
-//		Log.e("my view pager", "height= " + height + ", top= " + topStripZone);
-//	}
-	
 	public void setWidth(float width){
 		this.leftBezelZone = width * 0.05f;
 		this.rightBezelZone = width * 0.95f;
-//		Log.e("my view pager", "width= " + width + ", left= " + leftBezelZone + ", right= " + rightBezelZone);
 	}
 }

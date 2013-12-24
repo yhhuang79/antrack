@@ -1,4 +1,4 @@
-package tw.plash.antrack.map;
+package tw.plash.antrack.location;
 
 import tw.plash.antrack.util.TouchableWrapper;
 import tw.plash.antrack.util.TouchableWrapperCallback;

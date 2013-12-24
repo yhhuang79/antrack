@@ -1,5 +1,9 @@
-package tw.plash.antrack;
+package tw.plash.antrack.stats;
 
+import tw.plash.antrack.AntrackApp;
+import tw.plash.antrack.R;
+import tw.plash.antrack.R.id;
+import tw.plash.antrack.R.layout;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;

@@ -6,6 +6,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import tw.plash.antrack.stats.StatsUpdater;
 import android.content.Context;
 import android.location.Location;
 

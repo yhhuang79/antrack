@@ -1,10 +1,11 @@
-package tw.plash.antrack;
+package tw.plash.antrack.location;
 
 import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import tw.plash.antrack.AntrackApp;
 import tw.plash.antrack.util.Constants;
 import android.content.SharedPreferences;
 import android.util.Log;

@@ -15,6 +15,7 @@ import org.json.JSONObject;
 import tw.plash.antrack.connection.EncodedRequest;
 import tw.plash.antrack.connection.MultipartRequest;
 import tw.plash.antrack.images.ImageMarker;
+import tw.plash.antrack.location.AntrackLocation;
 import tw.plash.antrack.util.Utility;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -88,25 +89,6 @@ public class AntrackApi {
 		//new aynctask to do this...pass in the request queue as parameter
 		new AsyncImageReqGenerator(mResutstQueue, token, im, listener, errorListener).execute();
 		return null;
-		
-//		String url = "http://plash2.iis.sinica.edu.tw/picture/uploadPicture.php";
-//		
-//		List<NameValuePair> param = new ArrayList<NameValuePair>();
-//		param.add(new BasicNameValuePair("action", "uploadPicture"));
-//		param.add(new BasicNameValuePair("token", token));
-//		param.add(new BasicNameValuePair("timestamp", new Timestamp(im.getTime()).toString()));
-//		param.add(new BasicNameValuePair("latitude",  String.valueOf(im.getLatitude())));
-//		param.add(new BasicNameValuePair("longitude", String.valueOf(im.getLongitude())));
-//		File file = new File(im.getPath());
-//		MultipartRequest req = null;
-//		try {
-//			req = new MultipartRequest(url, param, file, listener, errorListener);
-//			req.setRetryPolicy(new DefaultRetryPolicy(10000, 10, 1.5f));
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//		
-//		return mResutstQueue.add(req);
 	}
 	
 	private class AsyncImageReqGenerator extends AsyncTask<Void, Void, Void>{

@@ -1,4 +1,4 @@
-package tw.plash.antrack.map;
+package tw.plash.antrack.location;
 
 import java.util.ArrayList;
 import java.util.List;

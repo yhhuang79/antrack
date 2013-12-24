@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import tw.plash.antrack.images.ImageMarker;
+import tw.plash.antrack.location.AntrackLocation;
+import tw.plash.antrack.stats.Stats;
 import tw.plash.antrack.util.Constants;
 import android.content.ContentValues;
 import android.content.Context;

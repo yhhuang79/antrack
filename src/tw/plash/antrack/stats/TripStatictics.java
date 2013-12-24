@@ -1,4 +1,4 @@
-package tw.plash.antrack;
+package tw.plash.antrack.stats;
 
 import java.io.Serializable;
 

@@ -1,6 +1,5 @@
 package tw.plash.antrack;
 
-import tw.plash.antrack.map.AntrackMapActivity;
 import tw.plash.antrack.util.Installation;
 import android.app.Activity;
 import android.content.Intent;
@@ -233,7 +232,7 @@ public class Tutorial extends Activity {
 	}
 	
 	private void finishThisAndGoToMapActivity(){
-		startActivity(new Intent(Tutorial.this, AntrackMapActivity.class).setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT));
+		startActivity(new Intent(Tutorial.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT));
 		finish();
 	}
 }

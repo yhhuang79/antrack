@@ -9,7 +9,9 @@ import tw.plash.antrack.images.ImageConfirmationHandler;
 import tw.plash.antrack.images.ImageCreationHandler;
 import tw.plash.antrack.images.ImageMarker;
 import tw.plash.antrack.images.ImageUploader;
-import tw.plash.antrack.map.AntrackMapActivity;
+import tw.plash.antrack.location.AntrackLocation;
+import tw.plash.antrack.location.LocationUploader;
+import tw.plash.antrack.stats.TripStatictics;
 import tw.plash.antrack.util.Constants;
 import tw.plash.antrack.util.IPCMessages;
 import tw.plash.antrack.util.Utility;
@@ -133,7 +135,7 @@ public class AntrackService extends Service implements LocationListener, Connect
 		Notification notification = new Notification(R.drawable.ic_launcher, "sharing has started",
 				System.currentTimeMillis());
 		PendingIntent pendingIntent = PendingIntent.getActivity(AntrackService.this, 0, new Intent(AntrackService.this,
-				AntrackMapActivity.class).setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT), PendingIntent.FLAG_UPDATE_CURRENT);
+				MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT), PendingIntent.FLAG_UPDATE_CURRENT);
 		notification.setLatestEventInfo(AntrackService.this, "AnTrack", "sharing...", pendingIntent);
 		startForeground(1337, notification);
 	}
