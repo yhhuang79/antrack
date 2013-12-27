@@ -35,4 +35,7 @@ public interface Constants {
 	 *    12 ->    0.03m x    0.02m
 	 */
 	public final int GEOHASH_CHAR_PRECISION = 9;
+	
+	public final int VALID_LOCATION = 1;
+	public final int INVALID_LOCATION = 0;
 }
