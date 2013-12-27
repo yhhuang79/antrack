@@ -9,12 +9,8 @@ import tw.plash.antrack.images.ImageConfirmationHandler;
 import tw.plash.antrack.images.ImageCreationHandler;
 import tw.plash.antrack.images.ImageMarker;
 import tw.plash.antrack.images.ImageUploader;
-import tw.plash.antrack.location.AntrackLocation;
-import tw.plash.antrack.location.LocationUploader;
-import tw.plash.antrack.stats.TripStatictics;
-import tw.plash.antrack.util.Constants;
+import tw.plash.antrack.location.LocationServiceConnector;
 import tw.plash.antrack.util.IPCMessages;
-import tw.plash.antrack.util.Utility;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -23,7 +19,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -32,27 +27,18 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
-import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
-import com.google.android.gms.location.LocationClient;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-
-public class AntrackService extends Service implements LocationListener, ConnectionCallbacks,
-		OnConnectionFailedListener {
+public class AntrackService extends Service {
 	
 	private static boolean serviceIsSharing = false;
 	
-	private LocationClient locationClient;
-	private LocationRequest locationRequest;
-	
-	private TripStatictics stats;
-	
 	private AntrackApp app;
 	
+	private Context context;
+	
+	private LocationServiceConnector locationServiceConnector;
+	private SharingManager sharingManager;
+	
 	private ImageUploader imageUploader;
-	private LocationUploader locationUploader;
 	
 	private Map<String, ActionHandler> handlers;
 	
@@ -120,15 +106,10 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private void prepareToStartSharing() {
-		resetVariables();
+		app.resetVariables();
 		showNotification();
 		serviceIsSharing = true;
-	}
-	
-	private void resetVariables() {
-		app.getDbhelper().removeAll();
-		stats.resetStats();
-		app.setLatestLocation(null);
+		sharingManager.startSharing();
 	}
 	
 	private void showNotification() {
@@ -141,13 +122,9 @@ public class AntrackService extends Service implements LocationListener, Connect
 	}
 	
 	private void prepareToStopSharing() {
+		sharingManager.stopSharing();
 		serviceIsSharing = false;
-		app.getStatsUpdater().updateStats(stats);
 		stopForeground(true);
-	}
-	
-	synchronized private void sendLocationMessage(Location location){
-		sendMessageToMapActivity(IPCMessages.UPDATE_NEW_LOCATION, location);
 	}
 	
 	synchronized private void sendTrajectoryMessage(List<Location> locations){
@@ -174,20 +151,23 @@ public class AntrackService extends Service implements LocationListener, Connect
 	public void onCreate() {
 		super.onCreate();
 		
-		setupLocationRequest();
-		setupLocationClient();
-		
 		serviceIsSharing = false;
 		
-		app = AntrackApp.getInstance(this);
+		context = this;
 		
-		imageUploader = new ImageUploader(app, new Handler(), PreferenceManager.getDefaultSharedPreferences(AntrackService.this));
-		locationUploader = new LocationUploader(app, PreferenceManager.getDefaultSharedPreferences(AntrackService.this));
+		app = AntrackApp.getInstance(context);
+		
+		imageUploader = new ImageUploader(app, new Handler(), PreferenceManager.getDefaultSharedPreferences(context));
 		
 		createHandlers();
 		
-		stats = new TripStatictics();
+		setupBroadcastReceiver();
 		
+		locationServiceConnector = new LocationServiceConnector(context);
+		sharingManager = new SharingManager(context);
+	}
+	
+	private void setupBroadcastReceiver(){
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(IPCMessages.LB_START_SHARING);
 		filter.addAction(IPCMessages.LB_STOP_SHARING);
@@ -195,18 +175,6 @@ public class AntrackService extends Service implements LocationListener, Connect
 		filter.addAction(IPCMessages.LB_IMAGE_CONFIRM);
 		filter.addAction(IPCMessages.LB_IMAGE_CANCEL);
 		LocalBroadcastManager.getInstance(AntrackService.this).registerReceiver(mBroadcastReceiver, filter);
-	}
-	
-	private void setupLocationRequest() {
-		locationRequest = LocationRequest.create();
-		locationRequest.setInterval(Constants.LOCATION_INTERVAL);
-		locationRequest.setFastestInterval(Constants.LOCATION_FASTEST_INTERVAL);
-		locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-	}
-	
-	private void setupLocationClient() {
-		locationClient = new LocationClient(AntrackService.this, AntrackService.this, AntrackService.this);
-		locationClient.connect();
 	}
 	
 	@Override
@@ -222,6 +190,9 @@ public class AntrackService extends Service implements LocationListener, Connect
 	public void onDestroy() {
 		super.onDestroy();
 		
+		locationServiceConnector.stop();
+		locationServiceConnector = null;
+		
 		imageUploader.stop();
 		imageUploader = null;
 		
@@ -230,66 +201,5 @@ public class AntrackService extends Service implements LocationListener, Connect
 		LocalBroadcastManager.getInstance(AntrackService.this).unregisterReceiver(mBroadcastReceiver);
 		
 		serviceIsSharing = false;
-		
-		stats = null;
-		
-		if(locationClient.isConnected() || locationClient.isConnecting()){
-			locationClient.removeLocationUpdates(AntrackService.this);
-			locationClient.disconnect();
-		}
-		locationClient = null;
-	}
-	
-	@Override
-	public void onConnectionFailed(ConnectionResult connectionResult) {
-		//send error to activity
-	}
-	
-	@Override
-	public void onConnected(Bundle bundle) {
-		locationClient.requestLocationUpdates(locationRequest, AntrackService.this);
-	}
-	
-	@Override
-	public void onDisconnected() {
-	}
-	
-	@Override
-	public void onLocationChanged(Location location) {
-		handleNewLocation(location);
-	}
-	
-	private void handleNewLocation(Location location) {
-		//1. check validity of location
-		boolean toDisplay = shouldDisplayThisLocation(location);
-		//2. sharing or not, send location to activity if valid
-		if(toDisplay){
-			sendLocationMessage(location);
-		}
-		//3. if sharing, save to db, upload, do stats
-		if(isSharingLocation()){
-			AntrackLocation aLocation = new AntrackLocation(location, toDisplay);
-			//save to db
-			app.getDbhelper().insertLocation(aLocation);
-			//upload location
-			locationUploader.upload(aLocation);
-			if(toDisplay){
-				//do stats
-				stats.addLocation(location);
-				//send stats
-				app.getStatsUpdater().updateStats(stats);
-			}
-		}
-	}
-	
-	private boolean shouldDisplayThisLocation(Location location) {
-		boolean result = false;
-		if (Utility.isValidLocation(location)) {
-			if ((app.getLatestLocation() == null) || !Utility.isWithinAccuracyBound(app.getLatestLocation(), location)) {
-				result = true;
-			}
-			app.setLatestLocation(location);
-		}
-		return result;
 	}
 }

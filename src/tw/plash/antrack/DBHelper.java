@@ -2,6 +2,8 @@ package tw.plash.antrack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
 import tw.plash.antrack.images.ImageMarker;
 import tw.plash.antrack.location.AntrackLocation;
@@ -16,9 +18,10 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.location.Location;
+import android.util.Log;
 import ch.hsr.geohash.GeoHash;
 
-public class DBHelper {
+public class DBHelper implements Observer{
 	
 	private static final String DATABASE_NAME = "antrack";
 	private static final int DATABASE_VERSION = 15;
@@ -114,7 +117,7 @@ public class DBHelper {
 		}
 	}
 	
-	synchronized public long insertLocation(AntrackLocation alocation){
+	synchronized private long insertLocation(AntrackLocation alocation){
 		return insertLocation(alocation.getLocation(), alocation.getToDisplay());
 	}
 	
@@ -337,7 +340,7 @@ public class DBHelper {
 				stats.setStarttime(cursor.getString(cursor.getColumnIndex("starttime")));
 				stats.setDuration(cursor.getString(cursor.getColumnIndex("duration")));
 				stats.setDurationbase(cursor.getLong(cursor.getColumnIndex("durationbase")));
-				stats.setDistance(cursor.getString(cursor.getColumnIndex("distance")));
+//				stats.setDistance(cursor.getString(cursor.getColumnIndex("distance")));
 			}
 			cursor.close();
 		}
@@ -351,7 +354,7 @@ public class DBHelper {
 			cv.put("starttime", stats.getStarttime());
 			cv.put("duration", stats.getDuration());
 			cv.put("durationbase", stats.getDurationbase());
-			cv.put("distance", stats.getDistance());
+//			cv.put("distance", stats.getDistance());
 			return db.insert(STATS_TABLE, null, cv);
 		}
 		return ERROR_DB_IS_CLOSED;
@@ -390,5 +393,12 @@ public class DBHelper {
 		if (db != null) { // if null, close will cause null pointer exception
 			db.close();
 		}
+	}
+	
+	@Override
+	public void update(Observable observable, Object data) {
+		Log.e("tw.db", "received new location");
+		AntrackLocation antrackLocation = (AntrackLocation) data;
+		insertLocation(antrackLocation);
 	}
 }

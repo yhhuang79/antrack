@@ -6,9 +6,12 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import tw.plash.antrack.stats.StatsUpdater;
+import tw.plash.antrack.location.LocationHub;
+import tw.plash.antrack.location.LocationUploader;
+import tw.plash.antrack.stats.StatsKeeper;
 import android.content.Context;
 import android.location.Location;
+import android.preference.PreferenceManager;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.HurlStack;
@@ -21,19 +24,19 @@ public class AntrackApp {
 	private AntrackApi mApi;
 	private RequestQueue queue;
 	private DBHelper dbhelper;
-	private StatsUpdater statsUpdater;
+	private StatsKeeper statsKeeper;
 	private int followers;
 	private Context context;
-	private Location latestLocation;
+	private LocationHub locationHub;
 	
 	private AntrackApp(Context context) {
 		this.context = context;
 		queue = Volley.newRequestQueue(context, new HurlStack(null, getSSLSocketFactory(), DO_NOT_VERIFY));
 		mApi = new AntrackApi(queue);
 		dbhelper = new DBHelper(context);
-		statsUpdater = new StatsUpdater();
+		statsKeeper = new StatsKeeper();
 		followers = 0;
-		latestLocation = null;
+		locationHub = new LocationHub(context);
 	}
 	
 	public AntrackApi getApi(){
@@ -44,8 +47,14 @@ public class AntrackApp {
 		return dbhelper;
 	}
 	
-	public StatsUpdater getStatsUpdater(){
-		return statsUpdater;
+	public void resetVariables(){
+		getDbhelper().removeAll();
+		getStatsKeeper().resetStats();
+		getLocationHub().clearPreviousLocation();
+	}
+	
+	public StatsKeeper getStatsKeeper(){
+		return statsKeeper;
 	}
 	
 	public void setFollowers(int num){
@@ -56,12 +65,8 @@ public class AntrackApp {
 		return followers;
 	}
 	
-	public void setLatestLocation(Location location){
-		latestLocation = location;
-	}
-	
-	public Location getLatestLocation(){
-		return latestLocation;
+	public LocationHub getLocationHub(){
+		return locationHub;
 	}
 	
 	public static synchronized AntrackApp getInstance(Context context){

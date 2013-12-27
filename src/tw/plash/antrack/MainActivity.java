@@ -8,12 +8,6 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import tw.plash.antrack.R;
-import tw.plash.antrack.R.color;
-import tw.plash.antrack.R.drawable;
-import tw.plash.antrack.R.id;
-import tw.plash.antrack.R.layout;
-import tw.plash.antrack.R.string;
 import tw.plash.antrack.images.ImageMarker;
 import tw.plash.antrack.location.AntrackSupportMapFragment;
 import tw.plash.antrack.location.MapController;
@@ -38,7 +32,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentTransaction;
@@ -70,6 +63,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	private SharedPreferences preference;
 	
 	private AntrackApp app;
+	private Context context;
 	
 	private ImageButton fixLocationButton;
 //	private ImageButton settings;
@@ -94,14 +88,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 			case IPCMessages.SYNC_CURRENT_IMAGE_MARKERS: {
 				List<ImageMarker> imagemarkers = (List<ImageMarker>) msg.obj;
 				mapController.addImageMarkers(imagemarkers);
-			}
-				break;
-			case IPCMessages.UPDATE_NEW_LOCATION: {
-				Location location = (Location) msg.obj;
-				mapController.setNewLocation(location);
-				if (AntrackService.isSharingLocation()) {
-					mapController.addLocation(location);
-				}
 			}
 				break;
 			default:
@@ -150,7 +136,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 			DisplayMetrics dm = new DisplayMetrics();
 			getWindowManager().getDefaultDisplay().getMetrics(dm);
 			myViewPager.setWidth(dm.widthPixels);
-			// myViewPager.setHeight(dm.heightPixels);
 		}
 	}
 	
@@ -160,9 +145,11 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		
 		setContentView(R.layout.main);
 		
-		app = AntrackApp.getInstance(this);
+		context = this;
 		
-		preference = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+		app = AntrackApp.getInstance(context);
+		
+		preference = PreferenceManager.getDefaultSharedPreferences(context);
 		
 		final ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayShowHomeEnabled(false);
@@ -179,7 +166,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 			DisplayMetrics dm = new DisplayMetrics();
 			getWindowManager().getDefaultDisplay().getMetrics(dm);
 			myViewPager.setWidth(dm.widthPixels);
-			// myViewPager.setHeight(dm.heightPixels);
 		}
 		
 		myViewPager.setAdapter(pagerAdapter);
@@ -217,7 +203,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void setupGooglemap() {
-		switch (GooglePlayServicesUtil.isGooglePlayServicesAvailable(MainActivity.this)) {
+		switch (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context)) {
 		case ConnectionResult.SUCCESS:
 			AntrackSupportMapFragment asmf = ((AntrackSupportMapFragment) getSupportFragmentManager().findFragmentById(
 					R.id.map));
@@ -259,7 +245,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 				try{
 					mapController.centerAtMyLocation();
 				} catch(NullPointerException e){
-					Toast.makeText(MainActivity.this, "Waiting for location", Toast.LENGTH_SHORT).show();
+					Toast.makeText(context, "Waiting for location", Toast.LENGTH_SHORT).show();
 				}
 			}
 		});
@@ -317,10 +303,10 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 						intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
 						startActivityForResult(intent, requestCode);
 					} else{
-						Toast.makeText(MainActivity.this, "Waiting for location", Toast.LENGTH_SHORT).show();
+						Toast.makeText(context, "Waiting for location", Toast.LENGTH_SHORT).show();
 					}
 				} else {
-					Toast.makeText(MainActivity.this, "Cannot take picture", Toast.LENGTH_SHORT).show();
+					Toast.makeText(context, "Cannot take picture", Toast.LENGTH_SHORT).show();
 				}
 			}
 		});
@@ -337,7 +323,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		Intent intent = new Intent(IPCMessages.LB_IMAGE_CREATE);
 		intent.putExtra(IPCMessages.LB_EXTRA_IMAGE_PATH, path);
 		intent.putExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, code);
-		LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(intent);
+		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 	}
 	
 	@Override
@@ -346,13 +332,13 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		switch(resultCode){
 		case RESULT_OK:
 			notifyNewImageConfirmation(requestCode);
-			Toast.makeText(MainActivity.this, "New picture added", Toast.LENGTH_SHORT).show();
+			Toast.makeText(context, "New picture added", Toast.LENGTH_SHORT).show();
 			break;
 		case RESULT_CANCELED:
 		case RESULT_FIRST_USER:
 		default:
 			notifyNewImageCancellation(requestCode);
-			Toast.makeText(MainActivity.this, "No picture taken", Toast.LENGTH_SHORT).show();
+			Toast.makeText(context, "No picture taken", Toast.LENGTH_SHORT).show();
 			break;
 		}
 	}
@@ -360,17 +346,17 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	private void notifyNewImageConfirmation(int code){
 		Intent intent = new Intent(IPCMessages.LB_IMAGE_CONFIRM);
 		intent.putExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, code);
-		LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(intent);
+		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 	}
 	
 	private void notifyNewImageCancellation(int code){
 		Intent intent = new Intent(IPCMessages.LB_IMAGE_CANCEL);
 		intent.putExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, code);
-		LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(intent);
+		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 	}
 	
 	private void showConfirmStopSharingDialog() {
-		new AlertDialog.Builder(MainActivity.this)
+		new AlertDialog.Builder(context)
 			.setMessage("Are you sure you want to stop sharing?")
 			.setPositiveButton("yes", new DialogInterface.OnClickListener() {
 				@Override
@@ -384,10 +370,10 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	private void prepareToStopSharing() {
 		mapController.drawEndMarker();
 		sendLocalBroadcast(IPCMessages.LB_STOP_SHARING);
-		stopService(new Intent(MainActivity.this, AntrackService.class));
-		Toast.makeText(MainActivity.this, "Stop sharing", Toast.LENGTH_SHORT).show();
+		stopService(new Intent(context, AntrackService.class));
+		Toast.makeText(context, "Stop sharing", Toast.LENGTH_SHORT).show();
 		prepareButtonsToStop();
-		app.getStatsUpdater().stopSharing();
+//		app.getStatsKeeper().stopSharing(); //XXX replace with statskeeper
 		executeStopSharingConnection();
 	}
 	
@@ -418,7 +404,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	
 	private void sendLocalBroadcast(String action) {
 		Intent intent = new Intent(action);
-		LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(intent);
+		LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 	}
 	
 	private void setupStartSharingConnection() {
@@ -426,9 +412,9 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		String username = preference.getString("name", null);
 		String timestamp = new Timestamp(new Date().getTime()).toString();
 		if (uuid == null || username == null) {
-			Toast.makeText(MainActivity.this, "what", Toast.LENGTH_SHORT).show();
+			Toast.makeText(context, "what", Toast.LENGTH_SHORT).show();
 		} else {
-			final ProgressDialog diag = new ProgressDialog(MainActivity.this);
+			final ProgressDialog diag = new ProgressDialog(context);
 			diag.setMessage("Connecting to AnTrack Service...");
 			diag.setIndeterminate(true);
 			diag.setCancelable(false);
@@ -469,13 +455,13 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void prepareToStartSharing(String token, String url) {
-		app.getStatsUpdater().startSharing(System.currentTimeMillis(), SystemClock.elapsedRealtime());
+//		app.getStatsKeeper().startSharing(System.currentTimeMillis(), SystemClock.elapsedRealtime()); //XXX replace with statskeeper
 		app.setFollowers(0);
 		Log.e("tw.activity", "new token= " + token);
 		preference.edit().putString("token", token).putString("url", url).commit();
 		mapController.clearMap();
 		prepareButtonsToStart();
-		Toast.makeText(MainActivity.this, "Start sharing", Toast.LENGTH_SHORT).show();
+		Toast.makeText(context, "Start sharing", Toast.LENGTH_SHORT).show();
 		startService();
 		// use local broadcast to start sharing instead
 		sendLocalBroadcast(IPCMessages.LB_START_SHARING);
@@ -511,7 +497,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void showErrorMessage() {
-		new AlertDialog.Builder(MainActivity.this).setTitle("Error")
+		new AlertDialog.Builder(context).setTitle("Error")
 				.setMessage("Cannot connect to AnTrack service, check your internet settings and try again later")
 				.setCancelable(true).setNeutralButton("Okay", null).show();
 	}
@@ -523,21 +509,22 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		// retrieve shared preference
 		getPreferences();
 		bindToService();
+		app.getLocationHub().addObserver(mapController);
 	}
 	
 	private void getPreferences() {
 		mapController.setFixToLocation(preference.getBoolean(Constants.PREF_FIXTOLOCATION, true));
-		mapController.setZoomLevel(preference.getFloat(Constants.PREF_LASTZOOMLEVEL, -1f));
+		mapController.setZoomLevel(preference.getFloat(Constants.PREF_LASTZOOMLEVEL, 14f));
 	}
 	
 	private void startService() {
-		startService(new Intent(MainActivity.this, AntrackService.class));
+		startService(new Intent(context, AntrackService.class));
 	}
 	
 	void bindToService() {
 		// bind only when necessary
 		if (!mIsBound) {
-			bindService(new Intent(MainActivity.this, AntrackService.class), mConnection,
+			bindService(new Intent(context, AntrackService.class), mConnection,
 					Context.BIND_AUTO_CREATE);
 			mIsBound = true;
 		}
@@ -547,6 +534,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	protected void onPause() {
 		super.onPause();
 		Log.e("tw.map", "onPause");
+		app.getLocationHub().deleteObserver(mapController);
 		unbindFromService();
 		// save shared preference
 		savePreferences();
