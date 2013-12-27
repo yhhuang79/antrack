@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="tw.plash.antrack"
-    android:versionCode="8"
-    android:versionName="0.4" >
+    android:versionCode="15"
+    android:versionName="0.6" >
 
     <uses-sdk
         android:minSdkVersion="8"
@@ -42,7 +42,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="tw.plash.antrack.AntrackMapActivity"
+            android:name="tw.plash.antrack.MainActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:launchMode="singleTask" >
 
