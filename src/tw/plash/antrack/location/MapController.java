@@ -2,13 +2,18 @@ package tw.plash.antrack.location;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
+import tw.plash.antrack.AntrackService;
 import tw.plash.antrack.images.ImageMarker;
+import tw.plash.antrack.util.Constants;
 import tw.plash.antrack.util.TouchableWrapperCallback;
 import tw.plash.antrack.util.Utility;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -23,7 +28,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-public class MapController implements TouchableWrapperCallback{
+public class MapController implements TouchableWrapperCallback, Observer{
 	
 	private GoogleMap gmap;
 	private Polyline trajectory;
@@ -220,7 +225,19 @@ public class MapController implements TouchableWrapperCallback{
 		return this.fixToLocation;
 	}
 	
-	public void setNewLocation(Location location){
+	private void setNewLocation(Location location){
 		onLocationChangedListener.onLocationChanged(location);
+	}
+
+	@Override
+	public void update(Observable observable, Object data) {
+		Log.e("tw.mapcontroller", "got new location");
+		AntrackLocation antrackLocation = (AntrackLocation) data;
+		if(antrackLocation.getToDisplay() == Constants.VALID_LOCATION){
+			setNewLocation(antrackLocation.getLocation());
+			if(AntrackService.isSharingLocation()){
+				addLocation(antrackLocation.getLocation());
+			}
+		}
 	}
 }

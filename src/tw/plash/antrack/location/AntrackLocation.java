@@ -1,5 +1,6 @@
 package tw.plash.antrack.location;
 
+import tw.plash.antrack.util.Constants;
 import android.location.Location;
 
 public class AntrackLocation {
@@ -13,7 +14,7 @@ public class AntrackLocation {
 	}
 	
 	public AntrackLocation(Location location, boolean toDisplay) {
-		this(location, toDisplay? 1 : 0);
+		this(location, toDisplay? Constants.VALID_LOCATION : Constants.INVALID_LOCATION);
 	}
 	
 	public Location getLocation(){

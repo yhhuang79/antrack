@@ -1,6 +1,8 @@
 package tw.plash.antrack.location;
 
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,7 +16,7 @@ import com.android.volley.Response.ErrorListener;
 import com.android.volley.Response.Listener;
 import com.android.volley.VolleyError;
 
-public class LocationUploader {
+public class LocationUploader implements Observer{
 	
 	private AntrackApp app;
 	private SharedPreferences preference;
@@ -24,7 +26,14 @@ public class LocationUploader {
 		this.preference = preference;
 	}
 	
-	public void upload(AntrackLocation aLocation){
+	@Override
+	public void update(Observable observable, Object data) {
+		Log.e("tw.location uploader", "got new location");
+		AntrackLocation antrackLocation = (AntrackLocation) data;
+		upload(antrackLocation);
+	}
+	
+	private void upload(AntrackLocation aLocation){
 		List<AntrackLocation> locations = app.getDbhelper().getAllPendingUploadLocations();
 		locations.add(aLocation);
 		new Thread(new locationUploadTask(locations)).start();
