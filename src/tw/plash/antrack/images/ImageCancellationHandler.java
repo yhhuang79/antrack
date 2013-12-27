@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.util.Log;
 
 public class ImageCancellationHandler extends ActionHandler{
-	private AntrackApp app;
 	
 	public ImageCancellationHandler(AntrackApp app) {
 		super(app);
