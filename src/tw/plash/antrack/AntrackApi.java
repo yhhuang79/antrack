@@ -44,8 +44,6 @@ public class AntrackApi {
 		JsonObjectRequest req = new JsonObjectRequest(Method.GET, url, null, listener, errorListener);
 		req.setRetryPolicy(new DefaultRetryPolicy(3000, 3, 0.5f));
 		
-		Log.w("tw.api", "init: " + req.toString());
-		
 		return mResutstQueue.add(req);
 	}
 	
@@ -75,7 +73,6 @@ public class AntrackApi {
 		}
 		
 		param.add(new BasicNameValuePair("location", array.toString()));
-		Log.w("tw.upload", "upload: " + param.toString());
 		EncodedRequest req = new EncodedRequest(url, param, listener, errorListener);
 		req.setRetryPolicy(new DefaultRetryPolicy(3000, 3, 0));
 		

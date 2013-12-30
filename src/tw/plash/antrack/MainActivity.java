@@ -42,7 +42,6 @@ import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -284,7 +283,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		camera.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Log.e("tw.map", "camera click");
 				String imagename = String.format("%1$d.jpg", System.currentTimeMillis());
 				File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "AnTrack/" + preference.getString("token", ""));
 				dir.mkdirs();
@@ -315,7 +313,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	private int generateNewRequestCode(){
 		long seed = System.currentTimeMillis();
 		int code = (int) (seed % Constants.MAX_INT);
-		Log.e("tw.map", "new reuqest code= " + code);
 		return code;
 	}
 	
@@ -328,7 +325,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		Log.e("tw.map", "onactivity result, request code= " + requestCode);
 		switch(resultCode){
 		case RESULT_OK:
 			notifyNewImageConfirmation(requestCode);
@@ -373,7 +369,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		stopService(new Intent(context, AntrackService.class));
 		Toast.makeText(context, "Stop sharing", Toast.LENGTH_SHORT).show();
 		prepareButtonsToStop();
-//		app.getStatsKeeper().stopSharing(); //XXX replace with statskeeper
 		executeStopSharingConnection();
 	}
 	
@@ -426,7 +421,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 					public void onResponse(JSONObject obj) {
 						// parse the jsonobject returned from server
 						// init share action intent
-						Log.e("tw.activity", "init res= " + obj.toString());
 						diag.dismiss();
 						try {
 							if (obj.getInt("status_code") == 200) {
@@ -455,9 +449,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void prepareToStartSharing(String token, String url) {
-//		app.getStatsKeeper().startSharing(System.currentTimeMillis(), SystemClock.elapsedRealtime()); //XXX replace with statskeeper
 		app.setFollowers(0);
-		Log.e("tw.activity", "new token= " + token);
 		preference.edit().putString("token", token).putString("url", url).commit();
 		mapController.clearMap();
 		prepareButtonsToStart();
@@ -505,7 +497,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		Log.e("tw.map", "onResume");
 		// retrieve shared preference
 		getPreferences();
 		bindToService();
@@ -533,7 +524,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		Log.e("tw.map", "onPause");
 		app.getLocationHub().deleteObserver(mapController);
 		unbindFromService();
 		// save shared preference

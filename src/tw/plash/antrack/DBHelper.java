@@ -7,7 +7,6 @@ import java.util.Observer;
 
 import tw.plash.antrack.images.ImageMarker;
 import tw.plash.antrack.location.AntrackLocation;
-import tw.plash.antrack.stats.Stats;
 import tw.plash.antrack.util.Constants;
 import android.content.ContentValues;
 import android.content.Context;
@@ -18,17 +17,15 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.location.Location;
-import android.util.Log;
 import ch.hsr.geohash.GeoHash;
 
 public class DBHelper implements Observer{
 	
 	private static final String DATABASE_NAME = "antrack";
-	private static final int DATABASE_VERSION = 15;
+	private static final int DATABASE_VERSION = 16;
 	private static final String CURRENT_TRIP_TABLE = "currenttriptable";
 	private static final String PENDING_UPLOAD_LOCATION_TABLE = "pendinguploadlocation";
 	private static final String IMAGES_TABLE = "imagestable";
-	private static final String STATS_TABLE = "statstable";
 	private static final int ERROR_DB_IS_CLOSED = -2;
 	
 	private SQLiteDatabase db;
@@ -69,13 +66,6 @@ public class DBHelper implements Observer{
 			+ "code INTEGER UNIQUE, "
 			+ "state INTEGER)";
 	
-	private static final String CREATE_TABLE_STATS = "CREATE TABLE " + STATS_TABLE
-			+ "(id INTEGER PRIMARY KEY, "
-			+ "starttime TEXT, "
-			+ "duration TEXT, "
-			+ "durationbase REAL, "
-			+ "distance TEXT)";
-	
 	private static class OpenHelper extends SQLiteOpenHelper {
 		
 		OpenHelper(Context context) {
@@ -88,7 +78,7 @@ public class DBHelper implements Observer{
 				db.execSQL(CREATE_TABLE_CURRENT_TRIP);
 				db.execSQL(CREATE_TABLE_PENDING_UPLOAD_LOCATION);
 				db.execSQL(CREATE_TABLE_IMAGES);
-				db.execSQL(CREATE_TABLE_STATS);
+//				db.execSQL(CREATE_TABLE_STATS);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -100,7 +90,7 @@ public class DBHelper implements Observer{
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + CURRENT_TRIP_TABLE);
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + PENDING_UPLOAD_LOCATION_TABLE);
 				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + IMAGES_TABLE);
-				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + STATS_TABLE);
+//				db.execSQL("DROP TABLE IF EXIST " + DATABASE_NAME + "." + STATS_TABLE);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -332,45 +322,11 @@ public class DBHelper implements Observer{
 		return imagemarkers;
 	}
 	
-	synchronized public Stats getStats(){
-		Stats stats = new Stats();
-		if(db.isOpen()){
-			Cursor cursor = db.query(STATS_TABLE, null, null, null, null, null, null);
-			if (cursor.moveToFirst()) {
-				stats.setStarttime(cursor.getString(cursor.getColumnIndex("starttime")));
-				stats.setDuration(cursor.getString(cursor.getColumnIndex("duration")));
-				stats.setDurationbase(cursor.getLong(cursor.getColumnIndex("durationbase")));
-//				stats.setDistance(cursor.getString(cursor.getColumnIndex("distance")));
-			}
-			cursor.close();
-		}
-		return stats;
-	}
-	
-	synchronized public long setStats(Stats stats){
-		if(db.isOpen()){
-			db.delete(STATS_TABLE, null, null);
-			ContentValues cv = new ContentValues();
-			cv.put("starttime", stats.getStarttime());
-			cv.put("duration", stats.getDuration());
-			cv.put("durationbase", stats.getDurationbase());
-//			cv.put("distance", stats.getDistance());
-			return db.insert(STATS_TABLE, null, cv);
-		}
-		return ERROR_DB_IS_CLOSED;
-	}
-	
 	synchronized public void removeAll(){
 		if(db.isOpen()){
 			db.delete(CURRENT_TRIP_TABLE, null, null);
 			db.delete(IMAGES_TABLE, null, null);
 			db.delete(PENDING_UPLOAD_LOCATION_TABLE, null, null);
-		}
-	}
-	
-	synchronized public void removeStats(){
-		if(db.isOpen()){
-			db.delete(STATS_TABLE, null, null);
 		}
 	}
 	
@@ -397,7 +353,6 @@ public class DBHelper implements Observer{
 	
 	@Override
 	public void update(Observable observable, Object data) {
-		Log.e("tw.db", "received new location");
 		AntrackLocation antrackLocation = (AntrackLocation) data;
 		insertLocation(antrackLocation);
 	}

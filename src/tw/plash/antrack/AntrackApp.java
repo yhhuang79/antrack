@@ -49,7 +49,6 @@ public class AntrackApp {
 	
 	public void resetVariables(){
 		getDbhelper().removeAll();
-		getStatsKeeper().resetStats();
 		getLocationHub().clearPreviousLocation();
 	}
 	
@@ -78,6 +77,7 @@ public class AntrackApp {
 	
 	public void cancelAll(){
 		queue.cancelAll(context);
+		getLocationHub().clearPreviousLocation();
 	}
 	
 	private final HostnameVerifier DO_NOT_VERIFY = new HostnameVerifier() {
