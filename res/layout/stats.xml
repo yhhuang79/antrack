@@ -151,7 +151,17 @@
                     android:layout_height="wrap_content"
                     android:text="Duration" />
 
+                <!--
                 <Chronometer
+                    android:id="@+id/duration"
+                    style="@style/StatsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="00:00" />
+                -->
+
+                <TextView
                     android:id="@+id/duration"
                     style="@style/StatsText"
                     android:layout_width="wrap_content"
