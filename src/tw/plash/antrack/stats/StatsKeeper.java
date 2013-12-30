@@ -6,17 +6,8 @@ import java.util.Observer;
 import tw.plash.antrack.location.AntrackLocation;
 import tw.plash.antrack.util.Utility;
 import android.location.Location;
+import android.util.Log;
 
-/**
- * Stats keeper observers location hub for location update,
- * when a location update is received, stats keeper calculates
- * new stats (e.g. new distance, etc.)
- * 
- * Stats fragment observes stats keeper for stats update
- * 
- * @author cszu
- *
- */
 public class StatsKeeper extends Observable implements Observer{
 	
 	private Stats stats;
@@ -24,33 +15,51 @@ public class StatsKeeper extends Observable implements Observer{
 	private double distance;
 	
 	public StatsKeeper() {
-		this.stats = new Stats();
-		this.previousLocation = null;
-		this.distance = 0.0;
+		stats = new Stats();
+		previousLocation = null;
+		distance = 0.0;
+		publishUpdate(stats); //XXX this line is probably useless
 	}
 	
-	public void addLocation(Location location){
-		distance = distance + Utility.getDistance(previousLocation, location);
-		stats.setDistance(distance);
-		setChanged();
-		notifyObservers(stats);
+	public void initStats(){
+		stats = new Stats();
+		stats.setStartTime(System.currentTimeMillis());
+		publishUpdate(stats);
 	}
 	
-	public void resetStats(){
-		this.stats = new Stats();
-		setChanged();
-		notifyObservers();
+	public void finalizeStats(){
+		stats.setStopTime(System.currentTimeMillis());
+		publishUpdate(stats);
 	}
 	
+	public void sync(){
+		publishUpdate(stats);
+	}
+	
+	public Stats getStats(){
+		return stats;
+	}
+	
+	/**
+	 * receives location update from location hub
+	 */
 	@Override
 	public void update(Observable observable, Object data) {
 		AntrackLocation antrackLocation = (AntrackLocation) data;
 		if(previousLocation != null){
 			distance = distance + Utility.getDistance(previousLocation, antrackLocation.getLocation());
 			stats.setDistance(distance);
-			setChanged();
-			notifyObservers(stats);
+			publishUpdate(stats);
 		}
 		previousLocation = antrackLocation.getLocation();
+	}
+	
+	/**
+	 * publishes stats update to stats fragment
+	 */
+	private void publishUpdate(Stats stats){
+		Log.w("tw.statskeeper", "publish update");
+		setChanged();
+		notifyObservers(stats);
 	}
 }

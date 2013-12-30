@@ -1,72 +1,67 @@
 package tw.plash.antrack.stats;
 
+import tw.plash.antrack.util.Utility;
+
 public class Stats {
 	
-	private String starttime;
-	private String duration;
-	private long durationbase;
-	private String distanceString;
+	private long startTime;
+	private long stopTime;
 	private double distance;
 	private int numberOfFollowers;
 	private int numberOfPhotos;
 	
 	public Stats() {
-		starttime = "00:00:00";
-		duration = "00:00";
-		durationbase = 0L;
-		distanceString = "0km";
+		startTime = -1L;
+		stopTime = -1L;
 		distance = 0.0;
 		numberOfFollowers = 0;
 		numberOfPhotos = 0;
 	}
 	
-	public String getStarttime() {
-		return starttime;
+	public void setStartTime(long startTime){
+		this.startTime = startTime;
 	}
-
-	public void setStarttime(String starttime) {
-		this.starttime = starttime;
+	
+	public long getStartTime(){
+		return this.startTime;
 	}
-
-	public String getDuration() {
-		return duration;
+	
+	public String getStartTimeAsString(){
+		if(startTime > -1L){
+			return Utility.getHHMMSSTimeString(this.startTime);
+		}
+		return "00:00:00";
 	}
-
-	public void setDuration(String duration) {
-		this.duration = duration;
+	
+	public void setStopTime(long stopTime){
+		this.stopTime = stopTime;
 	}
-
-	public long getDurationbase() {
-		return durationbase;
-	}
-
-	public void setDurationbase(long durationbase) {
-		this.durationbase = durationbase;
+	
+	public long getDuration(){
+		if(stopTime > -1L){
+			return this.stopTime - this.startTime;
+		}
+		return -1L;
 	}
 	
 	public void setDistance(double distance){
 		this.distance = distance;
-		setDistanceString(String.format("%.3f", this.distance / 1000) + "km");
 	}
 	
-	public String getDistanceString() {
-		return distanceString;
-	}
-
-	public void setDistanceString(String distanceString) {
-		this.distanceString = distanceString;
+	public String getDistanceAsString(){
+		return String.format("%.3f", this.distance / 1000) + "km";
 	}
 	
-	public int getNumberOfFollowers(){
-		return this.numberOfFollowers;
+	public String getNumberOfFollowers(){
+		return String.valueOf(this.numberOfFollowers);
 	}
 	
 	public void setNumberOfFollowers(int number){
 		this.numberOfFollowers = number;
 	}
 	
-	public int getNumberOfPhotos(){
-		return this.numberOfPhotos;
+	public String getNumberOfPhotos(){
+		return String.valueOf(this.numberOfPhotos);
 	}
 	
 	public void setNumberOfPhotos(int photos){
