@@ -28,7 +28,6 @@ public class LocationUploader implements Observer{
 	
 	@Override
 	public void update(Observable observable, Object data) {
-		Log.e("tw.location uploader", "got new location");
 		AntrackLocation antrackLocation = (AntrackLocation) data;
 		upload(antrackLocation);
 	}
@@ -60,7 +59,6 @@ public class LocationUploader implements Observer{
 								int followers = obj.getInt("number_of_watcher");
 								app.setFollowers(followers);
 							} else{
-								Log.d("tw.uploadlocation", "locationUploadTask: code= " + obj.getInt(Constants.API_RES_KEY_STATUS_CODE));
 								addToRetry();
 							}
 						} catch (JSONException e) {
@@ -71,7 +69,6 @@ public class LocationUploader implements Observer{
 				}, new ErrorListener() {
 					@Override
 					public void onErrorResponse(VolleyError arg0) {
-						Log.d("tw.uploadlocation", "locationUploadTask: error= " + arg0.toString());
 						addToRetry();
 					}
 				});
@@ -81,7 +78,6 @@ public class LocationUploader implements Observer{
 		}
 		
 		private void addToRetry(){
-			Log.d("tw.uploadlocation", "locationUploadTask: add to retry");
 			app.getDbhelper().insertPendingUploadLocations(locations);
 		}
 	};

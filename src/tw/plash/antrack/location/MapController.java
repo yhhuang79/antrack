@@ -13,7 +13,6 @@ import tw.plash.antrack.util.Utility;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -114,13 +113,13 @@ public class MapController implements TouchableWrapperCallback, Observer{
 		trajectory = gmap.addPolyline(pline);
 		List<LatLng> points = trajectory.getPoints();
 		LatLng firstPoint = points.get(0);
-//		latestLocation = points.get(points.size() - 1);
+		latestLocation = points.get(points.size() - 1);
 		drawMarker(firstPoint, "Start");
-//		if(zoom > 0){
-//			gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(latestLocation, zoom));
-//		} else{
-//			gmap.animateCamera(CameraUpdateFactory.newLatLng(latestLocation));
-//		}
+		if(zoom > 0){
+			gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(latestLocation, zoom));
+		} else{
+			gmap.animateCamera(CameraUpdateFactory.newLatLng(latestLocation));
+		}
 	}
 	
 	synchronized public void drawEndMarker() {
@@ -231,7 +230,6 @@ public class MapController implements TouchableWrapperCallback, Observer{
 
 	@Override
 	public void update(Observable observable, Object data) {
-		Log.e("tw.mapcontroller", "got new location");
 		AntrackLocation antrackLocation = (AntrackLocation) data;
 		if(antrackLocation.getToDisplay() == Constants.VALID_LOCATION){
 			setNewLocation(antrackLocation.getLocation());

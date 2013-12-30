@@ -6,7 +6,6 @@ import java.util.Observer;
 import tw.plash.antrack.location.AntrackLocation;
 import tw.plash.antrack.util.Utility;
 import android.location.Location;
-import android.util.Log;
 
 public class StatsKeeper extends Observable implements Observer{
 	
@@ -58,7 +57,6 @@ public class StatsKeeper extends Observable implements Observer{
 	 * publishes stats update to stats fragment
 	 */
 	private void publishUpdate(Stats stats){
-		Log.w("tw.statskeeper", "publish update");
 		setChanged();
 		notifyObservers(stats);
 	}

@@ -5,7 +5,6 @@ import java.util.Observable;
 import tw.plash.antrack.util.Utility;
 import android.content.Context;
 import android.location.Location;
-import android.util.Log;
 
 import com.google.android.gms.location.LocationListener;
 
@@ -19,7 +18,6 @@ public class LocationHub extends Observable implements LocationListener {
 	
 	@Override
 	public void onLocationChanged(Location location) {
-		Log.e("tw.locationhub", "onLocationChanged");
 		//received a new location
 		//do filter first
 		boolean todisplay = shouldDisplayThisLocation(location);

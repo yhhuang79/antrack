@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -74,31 +73,17 @@ public class StatsFragment extends Fragment implements Observer{
 	@Override
 	public void onResume() {
 		super.onResume();
-		Log.e("tw.statsfragment", "onResume");
 		app.getStatsKeeper().addObserver(this);
 		app.getStatsKeeper().sync();
 		if(AntrackService.isSharingLocation()){
 			handler.post(updateDuration);
 		}
 	}
-	
-	//TODO need to init stats and finalize stats of stats keeper in service
-	//TODO make sure duration value when not recordign is set correctly
-	//TODO make sure when recording, duration value is set correctly
-	//TODO make sure when returning to a recording state, duration value is set correctly
-	
 	@Override
 	public void onPause() {
 		super.onPause();
-		Log.e("tw.statsfragment", "onPause");
 		app.getStatsKeeper().deleteObserver(this);
 		handler.removeCallbacks(updateDuration);
-	}
-	
-	@Override
-	public void onDestroyView() {
-		super.onDestroyView();
-		Log.e("tw.statsfragment", "onDestroyView");
 	}
 	
 	@Override
@@ -107,7 +92,6 @@ public class StatsFragment extends Fragment implements Observer{
 	}
 	
 	private void updateStatsPanel(Stats stats){
-		Log.e("tw.statsfragment", "updateStatsPanel");
 		startTime.setText(stats.getStartTimeAsString());
 		if(stats.getDuration() > -1L){
 			duration.setText(Utility.getDurationInSecondsAsFormattedString(stats.getDuration()/1000));
