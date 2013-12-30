@@ -4,8 +4,6 @@ import java.util.List;
 
 import tw.plash.antrack.AntrackApp;
 import tw.plash.antrack.R;
-import tw.plash.antrack.R.id;
-import tw.plash.antrack.R.layout;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
