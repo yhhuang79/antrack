@@ -54,6 +54,7 @@ public class MapController implements TouchableWrapperCallback, Observer{
 		this.gmap.getUiSettings().setZoomGesturesEnabled(true);
 		this.gmap.getUiSettings().setZoomControlsEnabled(false);
 		this.gmap.setIndoorEnabled(true);
+		this.gmap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
 		this.gmap.setOnCameraChangeListener(new OnCameraChangeListener() {
 			@Override
 			public void onCameraChange(CameraPosition position) {

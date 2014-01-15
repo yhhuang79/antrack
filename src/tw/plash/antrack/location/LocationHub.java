@@ -2,6 +2,7 @@ package tw.plash.antrack.location;
 
 import java.util.Observable;
 
+import tw.plash.antrack.util.Constants;
 import tw.plash.antrack.util.Utility;
 import android.content.Context;
 import android.location.Location;
@@ -11,9 +12,11 @@ import com.google.android.gms.location.LocationListener;
 public class LocationHub extends Observable implements LocationListener {
 	
 	private Location previousLocation;
+	private double previousVelocity;
 	
 	public LocationHub(Context context) {
 		previousLocation = null;
+		previousVelocity = 0;
 	}
 	
 	@Override
@@ -36,10 +39,13 @@ public class LocationHub extends Observable implements LocationListener {
 	private boolean shouldDisplayThisLocation(Location location) {
 		boolean result = false;
 		if (Utility.isValidLocation(location)) {
-			if ((previousLocation == null) || !Utility.isWithinAccuracyBound(previousLocation, location)) {
+			if ((previousLocation == null) || 
+					!Utility.isWithinAccuracyBound(previousLocation, location) ||
+					Utility.isWithinAccelerationBound(previousLocation, location, previousVelocity)) {
 				result = true;
 			}
 			previousLocation = location;
+			previousVelocity = Utility.getDistance(previousLocation, location) / Constants.LOCATION_INTERVAL;
 		}
 		return result;
 	}

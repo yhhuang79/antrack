@@ -9,6 +9,7 @@ import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -216,6 +217,7 @@ public class Tutorial extends Activity {
 				String name = et.getEditableText().toString();
 				Toast.makeText(Tutorial.this, "Hi! " + name, Toast.LENGTH_SHORT).show();
 				saveNameToSharedPreference(name);
+				saveScreenDpiToSharedPreference();
 				generateUniqueId();
 				finishThisAndGoToMapActivity();
 			}
@@ -229,6 +231,13 @@ public class Tutorial extends Activity {
 	private void generateUniqueId(){
 		String uuid = Installation.id(Tutorial.this);
 		pref.edit().putString("uuid", uuid).commit();
+	}
+	
+	private void saveScreenDpiToSharedPreference(){
+		DisplayMetrics metrics = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(metrics);
+		int dpi = metrics.densityDpi;
+		pref.edit().putInt("dpi", dpi).commit();
 	}
 	
 	private void finishThisAndGoToMapActivity(){

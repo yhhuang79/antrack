@@ -218,6 +218,15 @@ public class Utility {
 		}
 	}
 	
+	public static boolean isWithinAccelerationBound(Location previousLocation, Location currentlocation, double previousVelocity){
+		double currentVelocity = getDistance(previousLocation, currentlocation) / Constants.LOCATION_INTERVAL;
+		double Acceleration = Math.abs(currentVelocity - previousVelocity) / Constants.LOCATION_INTERVAL;
+		if(Acceleration * 1000 < 1){
+			return true;
+		} else{
+			return false;
+		}
+	}
 	private static double getDistance(double fromLatitude, double fromLongitude, double toLatitude, double toLongitude) {
 		double dlat = toRad(toLatitude - fromLatitude);
 		double dlon = toRad(toLongitude - fromLongitude);
