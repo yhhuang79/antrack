@@ -42,6 +42,7 @@ import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -178,7 +179,6 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 					myViewPager.setPagingEnabled(true);
 				}
 			}
-			
 			@Override
 			public void onPageScrolled(int arg0, float arg1, int arg2) {
 			}

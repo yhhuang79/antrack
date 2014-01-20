@@ -41,7 +41,7 @@
         android:orientation="horizontal"
         android:weightSum="1.0"
         android:padding="4dip" >
-
+<!--
         <View 
             android:layout_width="0dip"
             android:layout_height="match_parent"
@@ -57,7 +57,7 @@
             android:scaleType="fitCenter"
             android:src="@drawable/settings" 
             android:contentDescription="Settings"/>
-        
+-->        
         <View 
             android:layout_width="0dip"
             android:layout_height="match_parent"
@@ -66,7 +66,7 @@
         <ImageButton
             android:id="@+id/share"
             android:layout_width="0dip"
-            android:layout_weight="0.2"
+            android:layout_weight="0.25"
             android:layout_height="40dip"
             android:background="@drawable/camerabuttoninactivebg"
             android:scaleType="fitCenter"
@@ -81,7 +81,7 @@
         <Button
             android:id="@+id/controlbutton"
             android:layout_width="0dip"
-            android:layout_weight="0.2"
+            android:layout_weight="0.25"
             android:layout_height="40dip"
             android:layout_marginLeft="8dip"
             android:layout_marginRight="8dip"
@@ -99,7 +99,7 @@
         <ImageButton
             android:id="@+id/camera"
             android:layout_width="0dip"
-            android:layout_weight="0.2"
+            android:layout_weight="0.25"
             android:layout_height="40dip"
             android:background="@drawable/camerabuttoninactivebg"
             android:scaleType="fitCenter"

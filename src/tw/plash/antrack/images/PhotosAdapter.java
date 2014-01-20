@@ -4,8 +4,6 @@ import java.io.File;
 import java.util.List;
 
 import tw.plash.antrack.R;
-import tw.plash.antrack.Tutorial;
-import tw.plash.antrack.R.drawable;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;

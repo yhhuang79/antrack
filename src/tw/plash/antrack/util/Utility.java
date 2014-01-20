@@ -218,9 +218,9 @@ public class Utility {
 		}
 	}
 	
-	public static boolean isWithinAccelerationBound(Location previousLocation, Location currentlocation, double previousVelocity){
-		double currentVelocity = getDistance(previousLocation, currentlocation) / Constants.LOCATION_INTERVAL;
-		double Acceleration = Math.abs(currentVelocity - previousVelocity) / Constants.LOCATION_INTERVAL;
+	public static boolean isWithinAccelerationBound(Location previousLocation, Location currentlocation, double previousVelocity, long diffTime){
+		double currentVelocity = getDistance(previousLocation, currentlocation) / diffTime;
+		double Acceleration = Math.abs(currentVelocity - previousVelocity) / diffTime;
 		if(Acceleration * 1000 < 1){
 			return true;
 		} else{

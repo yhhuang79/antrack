@@ -34,7 +34,8 @@ public class AntrackViewPager extends ViewPager {
 		float x = event.getX();
 		this.isBezelGesture = isBezelGesture(x);
 		if(this.isPagingEnabled || this.isBezelGesture){
-			return true;
+			//return true;
+			return super.onInterceptHoverEvent(event);
 		}
 		return false;
 	}

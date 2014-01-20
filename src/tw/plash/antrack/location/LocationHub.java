@@ -13,10 +13,12 @@ public class LocationHub extends Observable implements LocationListener {
 	
 	private Location previousLocation;
 	private double previousVelocity;
+	private long previousTimestamp;
 	
 	public LocationHub(Context context) {
 		previousLocation = null;
 		previousVelocity = 0;
+		previousTimestamp = System.currentTimeMillis();
 	}
 	
 	@Override
@@ -39,9 +41,10 @@ public class LocationHub extends Observable implements LocationListener {
 	private boolean shouldDisplayThisLocation(Location location) {
 		boolean result = false;
 		if (Utility.isValidLocation(location)) {
+			long DiffTime = System.currentTimeMillis() - previousTimestamp;
 			if ((previousLocation == null) || 
 					!Utility.isWithinAccuracyBound(previousLocation, location) ||
-					Utility.isWithinAccelerationBound(previousLocation, location, previousVelocity)) {
+					Utility.isWithinAccelerationBound(previousLocation, location, previousVelocity, DiffTime)) {
 				result = true;
 			}
 			previousLocation = location;

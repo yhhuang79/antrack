@@ -59,6 +59,11 @@ public class MapController implements TouchableWrapperCallback, Observer{
 			@Override
 			public void onCameraChange(CameraPosition position) {
 				zoom = position.zoom;
+				if (position.zoom >= 15)
+					gmap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+				else
+					gmap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+					
 			}
 		});
 		this.gmap.setLocationSource(new LocationSource() {

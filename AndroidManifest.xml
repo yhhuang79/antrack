@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="tw.plash.antrack"
-    android:versionCode="17"
-    android:versionName="0.7" >
+    android:versionCode="18"
+    android:versionName="0.8" >
 
     <uses-sdk
         android:minSdkVersion="8"
@@ -56,20 +56,18 @@
 
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyCpGnXPImihky8OANOt6_EOuLbYB4CHI3w" />
+            android:value="AIzaSyCFt3m5FxfGk-beR6Fc6CGRTIrLfROjoao" />
             <!--  	Chris's Key
             android:value="AIzaSyCFt3m5FxfGk-beR6Fc6CGRTIrLfROjoao" /> 
             
             		Y.H. Key
             android:value="AIzaSyCpGnXPImihky8OANOt6_EOuLbYB4CHI3w" />
             -->
+        <meta-data
+    		android:name="com.google.android.gms.version"
+    		android:value="@integer/google_play_services_version" />    
         <service android:name="tw.plash.antrack.AntrackService" >
-        </service>
-
-        <activity
-            android:name="tw.plash.antrack.Test"
-            android:label="@string/title_activity_test" >
-        </activity>
+        </service>       
     </application>
 
 </manifest>
