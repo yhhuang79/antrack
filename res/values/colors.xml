@@ -38,5 +38,7 @@
 		10% — 1A
 		5% — 0D
 		0% — 00    -->
+    <color name="blue_bg">#99A0DDF3</color>
+    <color name="orange_bg">#99FF8C40</color>
 
 </resources>
