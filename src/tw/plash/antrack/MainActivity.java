@@ -485,27 +485,27 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void showNotFirstTimeSharingDialog(){
-		//showSharingSelector("Share again via...");
-//		Intent sendIntent = new Intent();
-//		sendIntent.setAction(Intent.ACTION_SEND);
-//		//sendIntent.setData(ContactsContract.Contacts.CONTENT_URI);
-//		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
-//		sendIntent.putExtra(Intent.EXTRA_TEXT,
-//		"Click on the link to follow my lead " + preference.getString("url", ""));
-//		sendIntent.setType("text/plain");
-//		startActivityForResult(Intent.createChooser(sendIntent, "Share again via..."), PICK_CONTACT);		
-		final Intent intent = new Intent(Intent.ACTION_MAIN, null);
-
-		intent.addCategory(Intent.CATEGORY_LAUNCHER);
-
-		final ComponentName cn = new ComponentName("jp.naver.line.android",
-				"jp.naver.line.android.activity.selectchat.SelectChatActivity");
-
-		intent.setComponent(cn);
-
-		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-		startActivity(intent);
+		showSharingSelector("Share again via...");
+		Intent sendIntent = new Intent();
+		sendIntent.setAction(Intent.ACTION_SEND);
+		sendIntent.setData(ContactsContract.Contacts.CONTENT_URI);
+		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
+		sendIntent.putExtra(Intent.EXTRA_TEXT,
+		"Click on the link to follow my lead " + preference.getString("url", ""));
+		sendIntent.setType("text/plain");
+		startActivityForResult(Intent.createChooser(sendIntent, "Share again via..."), PICK_CONTACT);		
+//		final Intent intent = new Intent(Intent.ACTION_MAIN, null);
+//
+//		intent.addCategory(Intent.CATEGORY_LAUNCHER);
+//
+//		final ComponentName cn = new ComponentName("jp.naver.line.android",
+//				"jp.naver.line.android.activity.selectchat.SelectChatActivity");
+//
+//		intent.setComponent(cn);
+//
+//		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//
+//		startActivity(intent);
 	}
 	
 	private void showSharingSelector(String title){
