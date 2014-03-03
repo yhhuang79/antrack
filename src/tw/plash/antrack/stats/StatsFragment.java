@@ -98,6 +98,6 @@ public class StatsFragment extends Fragment implements Observer{
 		}
 		numberOfPhotos.setText(stats.getNumberOfPhotos());
 		distance.setText(stats.getDistanceAsString());
-		followers.setText(stats.getNumberOfFollowers());
+		followers.setText(stats.getNumberOfFollowers() + " followers");
 	}
 }

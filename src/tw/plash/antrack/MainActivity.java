@@ -33,6 +33,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.LocalBroadcastManager;
@@ -56,6 +57,7 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 
 public class MainActivity extends ActionBarActivity implements TabListener {
 	
+	private static final int PICK_CONTACT = 1001;
 	private tw.plash.antrack.AntrackViewPager myViewPager;
 	private PagerAdapter pagerAdapter;
 	
@@ -232,6 +234,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 					showConfirmStopSharingDialog();
 				} else {
 					// start sharing
+					app.getLocationHub().locationQueue.clear();
 					setupStartSharingConnection();
 				}
 			}
@@ -310,13 +313,13 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		});
 	}
 	
-	private int generateNewRequestCode(){
+	private int generateNewRequestCode() {
 		long seed = System.currentTimeMillis();
 		int code = (int) (seed % Constants.MAX_INT);
 		return code;
 	}
 	
-	private void notifyNewImageCreation(String path, int code){
+	private void notifyNewImageCreation(String path, int code) {
 		Intent intent = new Intent(IPCMessages.LB_IMAGE_CREATE);
 		intent.putExtra(IPCMessages.LB_EXTRA_IMAGE_PATH, path);
 		intent.putExtra(IPCMessages.LB_EXTRA_REQUEST_CODE, code);
@@ -327,13 +330,20 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch(resultCode){
 		case RESULT_OK:
-			notifyNewImageConfirmation(requestCode);
-			Toast.makeText(context, "New picture added", Toast.LENGTH_SHORT).show();
+			if (requestCode == PICK_CONTACT) {
+				Log.d("Contact Data", "onActivityResult");				
+				if (data != null)
+					Log.d("Contact Data", data.getDataString());
+			} else {
+				notifyNewImageConfirmation(requestCode);
+				int numberOfPhotos = Integer.parseInt(app.getStatsKeeper().getStats().getNumberOfPhotos());
+				app.getStatsKeeper().getStats().setNumberOfPhotos(numberOfPhotos + 1);
+				Toast.makeText(context, "New picture added", Toast.LENGTH_SHORT).show();
+			}
 			break;
 		case RESULT_CANCELED:
 		case RESULT_FIRST_USER:
 		default:
-			notifyNewImageCancellation(requestCode);
 			Toast.makeText(context, "No picture taken", Toast.LENGTH_SHORT).show();
 			break;
 		}
@@ -475,7 +485,27 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void showNotFirstTimeSharingDialog(){
-		showSharingSelector("Share again via...");
+		//showSharingSelector("Share again via...");
+//		Intent sendIntent = new Intent();
+//		sendIntent.setAction(Intent.ACTION_SEND);
+//		//sendIntent.setData(ContactsContract.Contacts.CONTENT_URI);
+//		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
+//		sendIntent.putExtra(Intent.EXTRA_TEXT,
+//		"Click on the link to follow my lead " + preference.getString("url", ""));
+//		sendIntent.setType("text/plain");
+//		startActivityForResult(Intent.createChooser(sendIntent, "Share again via..."), PICK_CONTACT);		
+		final Intent intent = new Intent(Intent.ACTION_MAIN, null);
+
+		intent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+		final ComponentName cn = new ComponentName("jp.naver.line.android",
+				"jp.naver.line.android.activity.selectchat.SelectChatActivity");
+
+		intent.setComponent(cn);
+
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+		startActivity(intent);
 	}
 	
 	private void showSharingSelector(String title){

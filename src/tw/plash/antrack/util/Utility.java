@@ -38,6 +38,7 @@ public class Utility {
 	
 	private static final double earthRadiusInMeters = 6371008.7714;
 	private static final double earthCircumferenceInMeters = 2 * Math.PI * earthRadiusInMeters;
+	private static final double velocityLimit = 88;
 	
 	//if input target size is smaller than 100 dp, assume it's for image markers on map
 	private static final int IMAGE_MARKER_THRESHOLD = 100;
@@ -227,6 +228,18 @@ public class Utility {
 			return false;
 		}
 	}
+	
+	public static boolean isAvailablePoint(Location previousLocation, Location currentlocation, double previousVelocity, long diffTime){
+		double res = getDistance(previousLocation, currentlocation);
+		double deltaOutlier = velocityLimit * diffTime;
+		double deltaSmooth = previousVelocity * diffTime * 1.2;
+		if ((res > deltaSmooth) && (res < deltaOutlier)){
+			return true;
+		} else{
+			return false;
+		}
+	}
+	
 	private static double getDistance(double fromLatitude, double fromLongitude, double toLatitude, double toLongitude) {
 		double dlat = toRad(toLatitude - fromLatitude);
 		double dlon = toRad(toLongitude - fromLongitude);

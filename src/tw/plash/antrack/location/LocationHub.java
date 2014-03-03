@@ -14,8 +14,10 @@ public class LocationHub extends Observable implements LocationListener {
 	private Location previousLocation;
 	private double previousVelocity;
 	private long previousTimestamp;
+	public LocationQueue locationQueue;
 	
 	public LocationHub(Context context) {
+		locationQueue = new LocationQueue();
 		previousLocation = null;
 		previousVelocity = 0;
 		previousTimestamp = System.currentTimeMillis();
@@ -40,15 +42,37 @@ public class LocationHub extends Observable implements LocationListener {
 	
 	private boolean shouldDisplayThisLocation(Location location) {
 		boolean result = false;
+		long DiffTime = System.currentTimeMillis() - previousTimestamp;
+//		if (Utility.isValidLocation(location)) {
+//			if ((previousLocation == null) || 
+//					!Utility.isWithinAccuracyBound(previousLocation, location)) {
+//				result = true;
+//				previousTimestamp = System.currentTimeMillis();
+//				locationQueue.offer(location, previousTimestamp);
+//				if (previousLocation != null)
+//					previousVelocity = Utility.getDistance(previousLocation, location) / DiffTime;
+//			}
+//			previousLocation = location;
+//		}
+//		if (locationQueue.getQueueSize() > 1)
+//			result = locationQueue.isAvailablePoint(location, previousVelocity, DiffTime);
 		if (Utility.isValidLocation(location)) {
-			long DiffTime = System.currentTimeMillis() - previousTimestamp;
-			if ((previousLocation == null) || 
-					!Utility.isWithinAccuracyBound(previousLocation, location) ||
-					Utility.isWithinAccelerationBound(previousLocation, location, previousVelocity, DiffTime)) {
+			if (previousLocation == null) {
 				result = true;
+				previousTimestamp = System.currentTimeMillis();
+				previousLocation = location;
+				locationQueue.offer(previousLocation, previousTimestamp);								
+			} else {
+				if ((locationQueue.isAvailablePoint(location, previousVelocity, DiffTime) ||
+						Utility.isWithinAccelerationBound(previousLocation, location, previousVelocity, DiffTime)) &&
+						!Utility.isWithinAccuracyBound(previousLocation, location)) {
+					result = true;
+					previousTimestamp = System.currentTimeMillis();
+					previousLocation = location;
+					previousVelocity = Utility.getDistance(previousLocation, location) / DiffTime;
+					locationQueue.offer(previousLocation, previousTimestamp);
+				}
 			}
-			previousLocation = location;
-			previousVelocity = Utility.getDistance(previousLocation, location) / Constants.LOCATION_INTERVAL;
 		}
 		return result;
 	}
