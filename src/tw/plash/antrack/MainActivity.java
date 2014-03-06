@@ -330,16 +330,16 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch(resultCode){
 		case RESULT_OK:
-			if (requestCode == PICK_CONTACT) {
-				Log.d("Contact Data", "onActivityResult");				
-				if (data != null)
-					Log.d("Contact Data", data.getDataString());
-			} else {
+//			if (requestCode == PICK_CONTACT) {
+//				Log.d("Contact Data", "onActivityResult");				
+//				if (data != null)
+//					Log.d("Contact Data", data.getDataString());
+//			} else {
 				notifyNewImageConfirmation(requestCode);
 				int numberOfPhotos = Integer.parseInt(app.getStatsKeeper().getStats().getNumberOfPhotos());
 				app.getStatsKeeper().getStats().setNumberOfPhotos(numberOfPhotos + 1);
 				Toast.makeText(context, "New picture added", Toast.LENGTH_SHORT).show();
-			}
+//			}
 			break;
 		case RESULT_CANCELED:
 		case RESULT_FIRST_USER:
