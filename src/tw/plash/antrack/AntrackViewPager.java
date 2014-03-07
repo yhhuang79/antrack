@@ -52,7 +52,7 @@ public class AntrackViewPager extends ViewPager {
 	}
 	
 	public void setWidth(float width){
-		this.leftBezelZone = width * 0.05f;
-		this.rightBezelZone = width * 0.95f;
+		this.leftBezelZone = width * 0.10f;
+		this.rightBezelZone = width * 0.90f;
 	}
 }

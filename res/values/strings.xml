@@ -11,5 +11,16 @@
     <string name="title_activity_test">Test</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    <string name="tab_stats">Stats</string>
+    <string name="tab_map">Map</string>
+    <string name="tab_photos">Photos</string>
+    <string name="stat_time">Started at</string>
+    <string name="stat_photo">Photos</string>
+    <string name="stat_duration">Duration</string>
+    <string name="stat_distance">Distance</string>
+    <string name="stat_followers"> followers</string>
+    <string name="tutor_welcome">What\&apos;s your name\?</string>
+    <string name="tutor_hint">Enter it</string>
+    <string name="tutor_done">Done!</string>
 
 </resources>

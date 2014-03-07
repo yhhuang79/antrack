@@ -27,7 +27,7 @@ public class Tutorial extends Activity {
 		
 		pref = PreferenceManager.getDefaultSharedPreferences(Tutorial.this);
 		if (pref.getBoolean("firsttime", true)) {
-			setScreenContent(R.layout.tutorialstep1);
+			setScreenContent(R.layout.setup);
 		} else {
 			finishThisAndGoToMapActivity();
 		}
@@ -166,6 +166,7 @@ public class Tutorial extends Activity {
 	private void setSetupPageContent() {
 		
 		Button previous = (Button) findViewById(R.id.previous);
+		previous.setVisibility(View.GONE);
 		previous.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -210,7 +211,7 @@ public class Tutorial extends Activity {
 			}
 		});
 		
-		next.setText("Done!");
+		next.setText(R.string.tutor_done);
 		next.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {

@@ -7,6 +7,7 @@ import tw.plash.antrack.AntrackApp;
 import tw.plash.antrack.AntrackService;
 import tw.plash.antrack.R;
 import tw.plash.antrack.util.Utility;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,7 +21,7 @@ import android.widget.TextView;
 public class StatsFragment extends Fragment implements Observer{
 	
 	private AntrackApp app;
-	
+	private Context mContext;
 	private TextView startTime;
 	private TextView duration;
 	private TextView numberOfPhotos;
@@ -53,6 +54,7 @@ public class StatsFragment extends Fragment implements Observer{
 		super.onCreate(savedInstanceState);
 		app = AntrackApp.getInstance(getActivity());
 		handler = new Handler();
+		mContext=getActivity();
 	}
 	
 	@Override
@@ -98,6 +100,7 @@ public class StatsFragment extends Fragment implements Observer{
 		}
 		numberOfPhotos.setText(stats.getNumberOfPhotos());
 		distance.setText(stats.getDistanceAsString());
-		followers.setText(stats.getNumberOfFollowers() + " followers");
+		
+		followers.setText(stats.getNumberOfFollowers()+" "+mContext.getResources().getString(R.string.stat_followers));
 	}
 }

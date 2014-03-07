@@ -61,7 +61,8 @@ public class LocationHub extends Observable implements LocationListener {
 				result = true;
 				previousTimestamp = System.currentTimeMillis();
 				previousLocation = location;
-				locationQueue.offer(previousLocation, previousTimestamp);								
+				locationQueue.offer(previousLocation, previousTimestamp);
+				
 			} else {
 				if ((locationQueue.isAvailablePoint(location, previousVelocity, DiffTime) ||
 						Utility.isWithinAccelerationBound(previousLocation, location, previousVelocity, DiffTime)) &&

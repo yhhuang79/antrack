@@ -49,6 +49,7 @@ public class AntrackApp {
 	
 	public void resetVariables(){
 		getDbhelper().removeAll();
+        statsKeeper.resetStats();
 		getLocationHub().clearPreviousLocation();
 	}
 	

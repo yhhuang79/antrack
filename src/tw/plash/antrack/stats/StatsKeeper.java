@@ -20,6 +20,10 @@ public class StatsKeeper extends Observable implements Observer{
 		publishUpdate(stats); //XXX this line is probably useless
 	}
 	
+	public void resetStats(){
+		stats = new Stats();
+	}
+	
 	public void initStats(){
 		stats = new Stats();
 		stats.setStartTime(System.currentTimeMillis());

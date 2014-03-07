@@ -10,7 +10,7 @@
         android:layout_above="@+id/nameinput"
         android:padding="15dip"
         android:layout_marginBottom="15dip"
-        android:text="Just one more thing..."
+        android:text="@string/tutor_welcome" 
         android:textSize="36sp" />
 
     <EditText
@@ -18,7 +18,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:hint="what\&apos;s your name\?"
+        android:hint="@string/tutor_hint"
         android:layout_marginLeft="10dip"
         android:layout_marginRight="10dip" 
         android:layout_marginBottom="15dip"

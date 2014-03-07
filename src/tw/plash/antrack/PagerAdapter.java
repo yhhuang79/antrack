@@ -2,14 +2,17 @@ package tw.plash.antrack;
 
 import tw.plash.antrack.images.PhotoFragment;
 import tw.plash.antrack.stats.StatsFragment;
+import android.content.Context;
+
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 
 public class PagerAdapter extends FragmentPagerAdapter {
-	
-	public PagerAdapter(FragmentManager fm) {
+	private Context mContext;
+	public PagerAdapter(FragmentManager fm,Context c) {
 		super(fm);
+		mContext=c;
 	}
 
 	@Override
@@ -33,13 +36,14 @@ public class PagerAdapter extends FragmentPagerAdapter {
 	@Override
 	public CharSequence getPageTitle(int position) {
 		switch(position){
+		
 		case 0:
-			return "Stats";
+			return  mContext.getResources().getString(R.string.tab_stats);
 		case 2:
-			return "Photos";
+			return  mContext.getResources().getString(R.string.tab_photos);
 		case 1:
 		default:
-			return "Map";
+			return  mContext.getResources().getString(R.string.tab_map);
 		}
 	}
 }

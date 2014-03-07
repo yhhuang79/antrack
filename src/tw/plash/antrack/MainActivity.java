@@ -2,6 +2,9 @@ package tw.plash.antrack;
 
 import java.io.File;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -158,7 +161,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		actionBar.setDisplayShowTitleEnabled(false);
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 		
-		pagerAdapter = new PagerAdapter(getSupportFragmentManager());
+		pagerAdapter = new PagerAdapter(getSupportFragmentManager(),context);
 		
 		myViewPager = (AntrackViewPager) findViewById(R.id.pager);
 		
@@ -287,7 +290,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 			@Override
 			public void onClick(View v) {
 				String imagename = String.format("%1$d.jpg", System.currentTimeMillis());
-				File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "AnTrack/" + preference.getString("token", ""));
+				File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "AnTrack/" +preference.getString("token", ""));
 				dir.mkdirs();
 				if (dir.exists() && dir.isDirectory()) {
 					File imagefile = new File(dir, imagename);
@@ -330,6 +333,8 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch(resultCode){
 		case RESULT_OK:
+
+
 //			if (requestCode == PICK_CONTACT) {
 //				Log.d("Contact Data", "onActivityResult");				
 //				if (data != null)
@@ -340,10 +345,14 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 				app.getStatsKeeper().getStats().setNumberOfPhotos(numberOfPhotos + 1);
 				Toast.makeText(context, "New picture added", Toast.LENGTH_SHORT).show();
 //			}
+
 			break;
 		case RESULT_CANCELED:
+			 
 		case RESULT_FIRST_USER:
+			 
 		default:
+			notifyNewImageCancellation(requestCode);
 			Toast.makeText(context, "No picture taken", Toast.LENGTH_SHORT).show();
 			break;
 		}
@@ -561,6 +570,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		// cancal all pending or ongoing connections if not sharing
 		if (!AntrackService.isSharingLocation()) {
 			app.cancelAll();
+			app.resetVariables();
 		}
 	}
 	

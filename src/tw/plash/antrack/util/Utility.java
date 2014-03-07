@@ -198,16 +198,10 @@ public class Utility {
 	public static boolean isValidLocation(Location location){
 		double latitude = location.getLatitude();
 		double longitude = location.getLongitude();
-		if(latitude > -90){
-			if(latitude < 90){
-				if(longitude > -180){
-					if(longitude < 180){
+	if((latitude > -90)&&(latitude < 90)&&(longitude > -180)&&(longitude < 180)&&(location.getAccuracy()<100)){
 						return true;
 					}
-				}
-			}
-		}
-		return false;
+		        	return false;
 	}
 	
 	public static boolean isWithinAccuracyBound(Location previousLocation, Location currentlocation){
