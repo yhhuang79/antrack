@@ -21,7 +21,11 @@ public class StatsKeeper extends Observable implements Observer{
 	}
 	
 	public void resetStats(){
-		stats = new Stats();
+		stats.setDistance(0.0);
+		stats.setNumberOfFollowers(0);
+		stats.setNumberOfPhotos(0);
+		stats.setStartTime(-1L);
+		stats.setStopTime(-1L);
 	}
 	
 	public void initStats(){

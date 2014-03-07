@@ -250,7 +250,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 				try{
 					mapController.centerAtMyLocation();
 				} catch(NullPointerException e){
-					Toast.makeText(context, "Waiting for location", Toast.LENGTH_SHORT).show();
+					Toast.makeText(context, context.getResources().getString(R.string.toast_location), Toast.LENGTH_SHORT).show();
 				}
 			}
 		});
@@ -307,10 +307,10 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 						intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
 						startActivityForResult(intent, requestCode);
 					} else{
-						Toast.makeText(context, "Waiting for location", Toast.LENGTH_SHORT).show();
+						Toast.makeText(context, context.getResources().getString(R.string.toast_location), Toast.LENGTH_SHORT).show();
 					}
 				} else {
-					Toast.makeText(context, "Cannot take picture", Toast.LENGTH_SHORT).show();
+					Toast.makeText(context, context.getResources().getString(R.string.toast_pic_err), Toast.LENGTH_SHORT).show();
 				}
 			}
 		});
@@ -333,19 +333,10 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch(resultCode){
 		case RESULT_OK:
-
-
-//			if (requestCode == PICK_CONTACT) {
-//				Log.d("Contact Data", "onActivityResult");				
-//				if (data != null)
-//					Log.d("Contact Data", data.getDataString());
-//			} else {
-				notifyNewImageConfirmation(requestCode);
-				int numberOfPhotos = Integer.parseInt(app.getStatsKeeper().getStats().getNumberOfPhotos());
-				app.getStatsKeeper().getStats().setNumberOfPhotos(numberOfPhotos + 1);
-				Toast.makeText(context, "New picture added", Toast.LENGTH_SHORT).show();
-//			}
-
+			notifyNewImageConfirmation(requestCode);
+			int numberOfPhotos = Integer.parseInt(app.getStatsKeeper().getStats().getNumberOfPhotos());
+			app.getStatsKeeper().getStats().setNumberOfPhotos(numberOfPhotos + 1);
+			Toast.makeText(context, context.getResources().getString(R.string.toast_new_pic), Toast.LENGTH_SHORT).show();
 			break;
 		case RESULT_CANCELED:
 			 
@@ -353,7 +344,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 			 
 		default:
 			notifyNewImageCancellation(requestCode);
-			Toast.makeText(context, "No picture taken", Toast.LENGTH_SHORT).show();
+			//Toast.makeText(context, context.getResources().getString(R.string.toast_no_pic), Toast.LENGTH_SHORT).show();
 			break;
 		}
 	}
@@ -372,21 +363,21 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	
 	private void showConfirmStopSharingDialog() {
 		new AlertDialog.Builder(context)
-			.setMessage("Are you sure you want to stop sharing?")
-			.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+			.setMessage(context.getResources().getString(R.string.alert_stop))
+			.setPositiveButton(context.getResources().getString(R.string.alert_yes), new DialogInterface.OnClickListener() {
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
 					prepareToStopSharing();
 				}
 			})
-			.setNegativeButton("no", null).show();
+			.setNegativeButton(context.getResources().getString(R.string.alert_no), null).show();
 	}
 	
 	private void prepareToStopSharing() {
 		mapController.drawEndMarker();
 		sendLocalBroadcast(IPCMessages.LB_STOP_SHARING);
 		stopService(new Intent(context, AntrackService.class));
-		Toast.makeText(context, "Stop sharing", Toast.LENGTH_SHORT).show();
+		Toast.makeText(context, context.getResources().getString(R.string.toast_stop), Toast.LENGTH_SHORT).show();
 		prepareButtonsToStop();
 		executeStopSharingConnection();
 	}
@@ -429,7 +420,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 			Toast.makeText(context, "what", Toast.LENGTH_SHORT).show();
 		} else {
 			final ProgressDialog diag = new ProgressDialog(context);
-			diag.setMessage("Connecting to AnTrack Service...");
+			diag.setMessage(context.getResources().getString(R.string.progress_conn));
 			diag.setIndeterminate(true);
 			diag.setCancelable(false);
 			diag.setCanceledOnTouchOutside(false);
@@ -472,7 +463,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		preference.edit().putString("token", token).putString("url", url).commit();
 		mapController.clearMap();
 		prepareButtonsToStart();
-		Toast.makeText(context, "Start sharing", Toast.LENGTH_SHORT).show();
+		Toast.makeText(context, context.getResources().getString(R.string.toast_start), Toast.LENGTH_SHORT).show();
 		startService();
 		// use local broadcast to start sharing instead
 		sendLocalBroadcast(IPCMessages.LB_START_SHARING);
@@ -490,19 +481,19 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void showFirstTimeSharingDialog(){
-		showSharingSelector("Share via...");
+		showSharingSelector(context.getResources().getString(R.string.share_dialog));
 	}
 	
 	private void showNotFirstTimeSharingDialog(){
-		showSharingSelector("Share again via...");
+		showSharingSelector(context.getResources().getString(R.string.share_dialog));
 		Intent sendIntent = new Intent();
 		sendIntent.setAction(Intent.ACTION_SEND);
 		sendIntent.setData(ContactsContract.Contacts.CONTENT_URI);
-		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
+		sendIntent.putExtra(Intent.EXTRA_SUBJECT, context.getResources().getString(R.string.share_text));
 		sendIntent.putExtra(Intent.EXTRA_TEXT,
-		"Click on the link to follow my lead " + preference.getString("url", ""));
+		context.getResources().getString(R.string.share_text_content) + preference.getString("url", ""));
 		sendIntent.setType("text/plain");
-		startActivityForResult(Intent.createChooser(sendIntent, "Share again via..."), PICK_CONTACT);		
+		startActivityForResult(Intent.createChooser(sendIntent, context.getResources().getString(R.string.share_dialog)), PICK_CONTACT);		
 //		final Intent intent = new Intent(Intent.ACTION_MAIN, null);
 //
 //		intent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -520,17 +511,17 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	private void showSharingSelector(String title){
 		Intent sendIntent = new Intent();
 		sendIntent.setAction(Intent.ACTION_SEND);
-		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Hey! it's me!");
+		sendIntent.putExtra(Intent.EXTRA_SUBJECT, context.getResources().getString(R.string.share_text));
 		sendIntent.putExtra(Intent.EXTRA_TEXT,
-		"Click on the link to follow my lead " + preference.getString("url", ""));
+		context.getResources().getString(R.string.share_text_content) + preference.getString("url", ""));
 		sendIntent.setType("text/plain");
 		startActivity(Intent.createChooser(sendIntent, title));
 	}
 	
 	private void showErrorMessage() {
-		new AlertDialog.Builder(context).setTitle("Error")
-				.setMessage("Cannot connect to AnTrack service, check your internet settings and try again later")
-				.setCancelable(true).setNeutralButton("Okay", null).show();
+		new AlertDialog.Builder(context).setTitle(context.getResources().getString(R.string.alert_err))
+				.setMessage(context.getResources().getString(R.string.alert_err_msg))
+				.setCancelable(true).setNeutralButton("OK", null).show();
 	}
 	
 	@Override

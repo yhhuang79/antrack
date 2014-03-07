@@ -11,16 +11,41 @@
     <string name="title_activity_test">Test</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    
     <string name="tab_stats">Stats</string>
     <string name="tab_map">Map</string>
     <string name="tab_photos">Photos</string>
+    
     <string name="stat_time">Started at</string>
     <string name="stat_photo">Photos</string>
     <string name="stat_duration">Duration</string>
     <string name="stat_distance">Distance</string>
     <string name="stat_followers"> followers</string>
+    
     <string name="tutor_welcome">What\&apos;s your name\?</string>
-    <string name="tutor_hint">Enter it</string>
-    <string name="tutor_done">Done!</string>
+    <string name="tutor_hint">Please enter..</string>
+    <string name="tutor_done">OK!</string>
+    
+    <string name="toast_location">Waiting for location</string>
+    <string name="toast_pic_err">Cannot take picture</string>
+    <string name="toast_new_pic">New picture added</string>
+    <string name="toast_no_pic">No picture taken</string>
+    <string name="toast_stop">Stop sharing</string>
+    <string name="toast_start">Start sharing</string>
+    
+    <string name="alert_stop">Are you sure you want to stop sharing?</string>
+    <string name="alert_yes">yes</string>
+    <string name="alert_no">no</string>
+    <string name="alert_err">Error</string>
+    <string name="alert_err_msg">Cannot connect to AnTrack service, check your internet settings and try again later</string>
+    
+    
+    <string name="progress_conn">Connecting to AnTrack Service..</string>
+    
+    <string name="share_dialog">Share via..</string>
+    <string name="share_text">Hey! it\&apos;s me!</string>
+    <string name="share_text_content">AnTrack-Click on the link to follow my real time lead sharing:</string>  
+    
+     
 
 </resources>
