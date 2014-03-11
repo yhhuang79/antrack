@@ -59,6 +59,7 @@ public class AntrackApp {
 	
 	public void setFollowers(int num){
 		followers = num;
+		statsKeeper.getStats().setNumberOfFollowers(num);
 	}
 	
 	public int getFollowers(){
