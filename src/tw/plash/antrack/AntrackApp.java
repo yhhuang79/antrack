@@ -25,7 +25,6 @@ public class AntrackApp {
 	private RequestQueue queue;
 	private DBHelper dbhelper;
 	private StatsKeeper statsKeeper;
-	private int followers;
 	private Context context;
 	private LocationHub locationHub;
 	
@@ -35,7 +34,6 @@ public class AntrackApp {
 		mApi = new AntrackApi(queue);
 		dbhelper = new DBHelper(context);
 		statsKeeper = new StatsKeeper();
-		followers = 0;
 		locationHub = new LocationHub(context);
 	}
 	
@@ -56,15 +54,7 @@ public class AntrackApp {
 	public StatsKeeper getStatsKeeper(){
 		return statsKeeper;
 	}
-	
-	public void setFollowers(int num){
-		followers = num;
-		statsKeeper.getStats().setNumberOfFollowers(num);
-	}
-	
-	public int getFollowers(){
-		return followers;
-	}
+
 	
 	public LocationHub getLocationHub(){
 		return locationHub;

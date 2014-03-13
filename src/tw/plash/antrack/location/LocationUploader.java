@@ -57,7 +57,8 @@ public class LocationUploader implements Observer{
 							if(obj.getInt(Constants.API_RES_KEY_STATUS_CODE) == 200){
 								Log.d("tw.uploadlocation", "locationUploadTask: success");
 								int followers = obj.getInt("number_of_watcher");
-								app.setFollowers(followers);
+								app.getStatsKeeper().getStats().setNumberOfFollowers(followers);
+							
 							} else{
 								addToRetry();
 							}

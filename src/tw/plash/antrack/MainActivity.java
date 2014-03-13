@@ -459,7 +459,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void prepareToStartSharing(String token, String url) {
-		app.setFollowers(0);
+		
 		preference.edit().putString("token", token).putString("url", url).commit();
 		mapController.clearMap();
 		prepareButtonsToStart();
