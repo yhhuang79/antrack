@@ -1,6 +1,11 @@
 package tw.plash.antrack;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import tw.plash.antrack.util.Installation;
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,11 +15,13 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 public class Tutorial extends Activity {
@@ -167,43 +174,49 @@ public class Tutorial extends Activity {
 		
 		Button previous = (Button) findViewById(R.id.previous);
 		previous.setVisibility(View.GONE);
-		previous.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				setScreenContent(R.layout.tutorialstep6);
-			}
-		});
 		
-		final EditText et = (EditText) findViewById(R.id.nameinput);
+		
+		final Spinner gmail = (Spinner) findViewById(R.id.nameinput);
 		final CheckBox cb = (CheckBox) findViewById(R.id.legal);
 		cb.setText(R.string.legal_stuff);
 		cb.setMovementMethod(LinkMovementMethod.getInstance());
 		final Button next = (Button) findViewById(R.id.next);
 		next.setEnabled(false);
 		
-		et.addTextChangedListener(new TextWatcher() {
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				if(s.length() > 0 && cb.isChecked()){
-					next.setEnabled(true);
-				} else{
-					next.setEnabled(false);
+		List<String> list = new ArrayList<String>();
+		Account[] accounts = AccountManager.get(this).getAccounts();
+		if (accounts == null) {
+			// accounts array shouldn't be null
+			Log.i("TAG", "Some error is here! accounts array shouldn't be null");
+		} else {
+			for (Account account : accounts) {
+				Log.i("TAG", "account.name = " + account.name + ", "
+						+ "account.type = " + account.type);
+				String accountName = account.name;
+				String accountType = account.type;
+
+				if (accountType.equals("com.google")
+						|| (accountType.equals("com.android.email") && accountName
+								.substring(accountName.indexOf("@") + 1)
+								.equals("gmail.com"))) {
+					//emailString = accountName;
+					list.add(accountName);
 				}
 			}
-			
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+			if (list.size() > 0) {
+				ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+						android.R.layout.simple_spinner_item, list);
+					dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+					gmail.setAdapter(dataAdapter);
 			}
-			
-			@Override
-			public void afterTextChanged(Editable s) {
-			}
-		});
+		}
+
 		
+	
 		cb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				if(isChecked && (et.getEditableText().length() > 0)){
+				if(isChecked && (String.valueOf(gmail.getSelectedItem()).length() > 0)){
 					next.setEnabled(true);
 				} else{
 					next.setEnabled(false);
@@ -215,7 +228,7 @@ public class Tutorial extends Activity {
 		next.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				String name = et.getEditableText().toString();
+				String name = String.valueOf(gmail.getSelectedItem());
 				Toast.makeText(Tutorial.this, "Hi! " + name, Toast.LENGTH_SHORT).show();
 				saveNameToSharedPreference(name);
 				saveScreenDpiToSharedPreference();
