@@ -22,7 +22,7 @@
     <string name="stat_distance">Distance</string>
     <string name="stat_followers"> followers</string>
     
-    <string name="tutor_welcome">Please select your Gmail</string>
+    <string name="tutor_welcome">Please select your Gmail account</string>
     <string name="tutor_hint">Please enter..</string>
     <string name="tutor_done">OK!</string>
     
