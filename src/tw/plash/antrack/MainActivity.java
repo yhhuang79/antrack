@@ -486,7 +486,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	
 	private void showNotFirstTimeSharingDialog(){
 		showSharingSelector(context.getResources().getString(R.string.share_dialog));
-		Intent sendIntent = new Intent();
+	/*	Intent sendIntent = new Intent();
 		sendIntent.setAction(Intent.ACTION_SEND);
 		sendIntent.setData(ContactsContract.Contacts.CONTENT_URI);
 		sendIntent.putExtra(Intent.EXTRA_SUBJECT, context.getResources().getString(R.string.share_text));
@@ -494,6 +494,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		context.getResources().getString(R.string.share_text_content) + preference.getString("url", ""));
 		sendIntent.setType("text/plain");
 		startActivityForResult(Intent.createChooser(sendIntent, context.getResources().getString(R.string.share_dialog)), PICK_CONTACT);		
+*/
 //		final Intent intent = new Intent(Intent.ACTION_MAIN, null);
 //
 //		intent.addCategory(Intent.CATEGORY_LAUNCHER);
