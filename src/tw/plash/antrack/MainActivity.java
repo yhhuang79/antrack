@@ -12,6 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import tw.plash.antrack.images.ImageMarker;
+import tw.plash.antrack.location.AntrackLocation;
 import tw.plash.antrack.location.AntrackSupportMapFragment;
 import tw.plash.antrack.location.MapController;
 import tw.plash.antrack.util.Constants;
@@ -274,7 +275,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		share.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				showNotFirstTimeSharingDialog();
+				showFirstTimeSharingDialog();
 			}
 		});
 		
@@ -368,6 +369,16 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
 					prepareToStopSharing();
+					new AlertDialog.Builder(context).setCancelable(false)
+					.setMessage(context.getResources().getString(R.string.alert_distance)+":"+app.getStatsKeeper().getStats().getDistanceAsString()+"\n"
+							   +context.getResources().getString(R.string.alert_duration)+":"+Utility.getDurationInSecondsAsFormattedString((System.currentTimeMillis()-app.getStatsKeeper().getStats().getStartTime())/1000)+"\n"
+							   +context.getResources().getString(R.string.alert_speed)+":"+app.getStatsKeeper().getStats().getSpeed()+" km/hr")
+					.setPositiveButton(context.getResources().getString(R.string.tutor_done), new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							showFirstTimeSharingDialog();
+						}
+					}).show();
 				}
 			})
 			.setNegativeButton(context.getResources().getString(R.string.alert_no), null).show();
@@ -377,9 +388,10 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		mapController.drawEndMarker();
 		sendLocalBroadcast(IPCMessages.LB_STOP_SHARING);
 		stopService(new Intent(context, AntrackService.class));
-		Toast.makeText(context, context.getResources().getString(R.string.toast_stop), Toast.LENGTH_SHORT).show();
+		//Toast.makeText(context, context.getResources().getString(R.string.toast_stop), Toast.LENGTH_SHORT).show();
 		prepareButtonsToStop();
-		executeStopSharingConnection();
+		
+		//executeStopSharingConnection();
 	}
 	
 	private void prepareButtonsToStop(){
@@ -391,6 +403,33 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		share.setBackgroundResource(R.drawable.camerabuttoninactivebg);
 	}
 	
+	private void deletePhotos(){
+		File path =new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/AnTrack/" +preference.getString("token", ""));
+		deleteDirectory(path);
+		
+	/*	
+		List<ImageMarker> imageMarkers=app.getDbhelper().getImageMarkers();
+		for(ImageMarker aImage : imageMarkers){
+			File file = new File(aImage.getPath());
+			boolean deleted = file.delete();
+		}
+		*/
+	}
+	public static boolean deleteDirectory(File path) {
+	    // TODO Auto-generated method stub
+	    if( path.exists() ) {
+	        File[] files = path.listFiles();
+	        for(int i=0; i<files.length; i++) {
+	            if(files[i].isDirectory()) {
+	                deleteDirectory(files[i]);
+	            }
+	            else {
+	                files[i].delete();
+	            }
+	        }
+	    }
+	    return(path.delete());
+	 }
 	
 	private void executeStopSharingConnection() {
 		String token = preference.getString("token", null);
@@ -459,7 +498,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 	}
 	
 	private void prepareToStartSharing(String token, String url) {
-		
+		deletePhotos();
 		preference.edit().putString("token", token).putString("url", url).commit();
 		mapController.clearMap();
 		prepareButtonsToStart();
@@ -468,7 +507,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		// use local broadcast to start sharing instead
 		sendLocalBroadcast(IPCMessages.LB_START_SHARING);
 		
-		showFirstTimeSharingDialog();
+		//showFirstTimeSharingDialog();
 	}
 	
 	private void prepareButtonsToStart(){
@@ -563,6 +602,7 @@ public class MainActivity extends ActionBarActivity implements TabListener {
 		if (!AntrackService.isSharingLocation()) {
 			app.cancelAll();
 			app.resetVariables();
+			
 		}
 	}
 	

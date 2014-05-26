@@ -6,7 +6,7 @@
     <string name="errormsg_google_play_service_unavailable">Ｇｏｏｇｌｅ服務未開啟</string>
     <string name="errormsg_server_error">ＡｎＴｒａｃｋ服務暫停中</string>
     <string name="control_button_stop">終止</string>
-    <string name="control_button_start">分享</string>
+    <string name="control_button_start">開始</string>
     <string name="legal_stuff">我同意Antrack的<a href="http://plash.tw/antrackprivacy">隱私政策</a></string>
     <string name="title_activity_test">Test</string>
     <string name="action_settings">Settings</string>
@@ -31,9 +31,13 @@
     <string name="toast_new_pic">已新增相片</string>
     <string name="toast_no_pic">未拍照</string>
     <string name="toast_stop">終止分享</string>
-    <string name="toast_start">開始分享</string>
+    <string name="toast_start">開始紀錄</string>
     
-    <string name="alert_stop">您確定要終止分享嗎?</string>
+    <string name="alert_stop">您確定要終止嗎?</string>
+    <string name="alert_share">分享</string>
+    <string name="alert_distance">總距離</string>
+    <string name="alert_duration">總時間</string>
+    <string name="alert_speed">均速率</string>
     <string name="alert_yes">是</string>
     <string name="alert_no">否</string>
     <string name="alert_err">糟糕</string>

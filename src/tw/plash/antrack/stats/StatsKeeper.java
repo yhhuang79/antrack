@@ -53,12 +53,14 @@ public class StatsKeeper extends Observable implements Observer{
 	@Override
 	public void update(Observable observable, Object data) {
 		AntrackLocation antrackLocation = (AntrackLocation) data;
+		if(antrackLocation.getToDisplay()==1){
 		if(previousLocation != null){
 			distance = distance + Utility.getDistance(previousLocation, antrackLocation.getLocation());
 			stats.setDistance(distance);
 			publishUpdate(stats);
 		}
 		previousLocation = antrackLocation.getLocation();
+		}
 	}
 	
 	/**

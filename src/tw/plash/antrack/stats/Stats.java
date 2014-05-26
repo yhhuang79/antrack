@@ -1,5 +1,6 @@
 package tw.plash.antrack.stats;
 
+import android.support.v7.appcompat.R.integer;
 import tw.plash.antrack.util.Utility;
 
 public class Stats {
@@ -42,6 +43,10 @@ public class Stats {
 			return this.stopTime - this.startTime;
 		}
 		return -1L;
+	}
+	public String getSpeed(){
+			return String.valueOf((int)((this.distance*3600)/((System.currentTimeMillis()-this.startTime))));
+		
 	}
 	
 	public void setDistance(double distance){
