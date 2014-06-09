@@ -31,7 +31,7 @@
     <string name="toast_new_pic">New picture added</string>
     <string name="toast_no_pic">No picture taken</string>
     <string name="toast_stop">Stop sharing</string>
-    <string name="toast_start">Start recoding</string>
+    <string name="toast_start">Start recording</string>
     
     <string name="alert_stop">Are you sure you want to stop?</string>
     <string name="alert_share">Share</string>
